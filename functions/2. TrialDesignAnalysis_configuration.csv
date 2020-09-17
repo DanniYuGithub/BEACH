@@ -1,0 +1,139 @@
+Num,Add,Tab.value,Tab.label,select.label,Type,Source,Request.Name,Condition,Layout,Title,height,width,res,tmp,PlotCode,FootCode,StatNote,StatModel,uiInput1,uilab1,uiInput2,uilab2,uiInput3,uilab3,uiInput4,uilab4,uiInput5,uilab5,uiInput6,uilab6,uiInput7,uilab7,uiInput8,uilab8,uiInput9,uilab9,uiInput10,uilab10,uiInput11,uilab11,uiInput12,uilab12,uiInput13,uilab13,uiInput14,uilab14,radio.label,radio.choice,radio.label2,radio.choice2,text.value,text.label,text.value2,text.label2,text.value3,text.label3,text.value4,text.label4,text.value5,text.label5,text.value6,text.label6,text.value7,text.label7,text.value8,text.label8,text.value9,text.label9,text.value10,text.label10,text.value11,text.label11,text.value12,text.label12,text.value13,text.label13,text.value14,text.label14,slide.min,slide.max,slide.by,slide.value,slide.label,slide.alert,slide.min2,slide.max2,slide.by2,slide.value2,slide.label2,slide.alert2,slide.min3,slide.max3,slide.by3,slide.value3,slide.label3,slide.alert3,slide.min4,slide.max4,slide.by4,slide.value4,slide.label4,slide.alert4,slide.min5,slide.max5,slide.by5,slide.value5,slide.label5,slide.alert5
+0,TRUE,NA,NA,NA,title_image,NA,NA,NA,NA,logo.png,NA,NA,NA,NA,NA,,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,,NA,NA,NA,NA,NA,NA,NA
+0,TRUE,NA,NA,NA,title_text,NA,NA,NA,NA,Trial Design,NA,NA,NA,NA,NA,,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,,NA,NA,NA,NA,NA,NA,NA
+1,TRUE,Tab2,Bridging Simulation,Dropdown Label1,Table,users/DT_frame2.r,Bridging analysis: effinition of parameters,FALSE,1,Bridging analysis:HHH:deffinition of parameters,10,"""c(1, 6)""",NA,0,"
+if(length(indataset)==0) indataset[[1]] <<- read.csv(""data/BridgingAnalysis_description.csv"", h=TRUE)
+indataset[[1]]
+","paste0(""Reference: http://www.tandfonline.com/doi/full/10.1080/10543406.2014.920340"")",NA,NA,input$radio,Dummy control,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,Dummy Control,c('TRUE'),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+2,TRUE,Tab2,Bridging Simulation,Dropdown Label1,Figure,NA,Bridging analysis: plot of ORR (CDx+) and sensitivity,FALSE,1,Bridging analysis:HHH:plot of ORR and sensitivity,300,300,80,0,"  est1 <- est_ORR(m1=round(as.numeric(input$text)), m=round(as.numeric(input$text3)), n11=input$slide2, n1=input$slide, n01=input$slide4, n0=input$slide3,
+                  orr=as.numeric(input$text4), c=input$slide5)
+  effA <- est1$eff1
+  tprA <- est1$tpr1    
+  plot_dp(tpr0=tprA, eff0=effA, ylim0=input$text5 )
+  abline(h=as.numeric(input$text4)*(input$slide2/input$slide)+as.numeric(input$text6)*(1-input$slide2/input$slide), lty=3, col='blue')","paste0( ""The blue horizontal reference line is the ORR in the population of CDA+ and CDx+\n"",
+""Pr(CTA+)=m1/m="",  round(as.numeric(input$text)/as.numeric(input$text3), 3),
+"";   Pr(CDx+|CTA+)=n11/n1="", round(input$slide2/input$slide, 3), 
+"";   Pr(CDx+|CTA-)=n01/n0="", round(input$slide4/input$slide3, 3), 
+""\nest1 <- est_ORR(m1="", round(as.numeric(input$text)), "", m="", round(as.numeric(input$text3)), 
+"", n11="", input$slide2, "", n1="", input$slide, "", n01="", input$slide4, "", n0="", input$slide3,
+                 "",  orr="", as.numeric(input$text4), "", c="", input$slide5, "")\n"", 
+""  effA <- est1$eff1 \n"",
+""  tprA <- est1$tpr1   \n"",
+""  plot_dp(tpr0=tprA, eff0=effA, ylim0=c("", input$text5, "") )"",
+""\n\n#Reference: http://www.tandfonline.com/doi/full/10.1080/10543406.2014.920340""
+)",NA,NA,input$text,number of enrolled CTA+,input$text2,tumor incidence,input$text3,m,input$slide,number of CTA+ patients enrolled in bridging (concordance) study,input$slide2,number of CTA+ and CDx+ out of n1,input$slide3,number of CTA- patients enrolled in bridging (concordance) study,input$slide4,number of CTA- and CDx+ out of n0,input$text4,single-arm objective response rate in subgroup CTA+ and CDx+,input$slide5,"proportion of delta2/delta1, where delta2 is efficacy in CTA- and CDx+",input$text5,Range of Y-axis,input$text6,single-arm objective response rate in subgroup CTA+ and CDx-,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,60,1. m1: Number of enrolled CTA+,0.1,2. Tumor Incidence (must be between 0 and 1),round(round(as.numeric(input$text))/as.numeric(input$text2)),3. m: the total number of screened patients with valid CTA results (eligible for bridging study),0.4,8. orr: single-arm objective response rate in subgroup CTA+ and CDx+,"""0,1""",10: Range of Y-axis,0.2,11: single-arm objective response rate in subgroup CTA+ and CDx-,"""0,1""",10: Range of Y-axis,0.2,11: single-arm objective response rate in subgroup CTA+ and CDx-,0.2,11: single-arm objective response rate in subgroup CTA+ and CDx-,0.2,11: single-arm objective response rate in subgroup CTA+ and CDx-,NA,NA,NA,NA,NA,NA,NA,NA,5,round(as.numeric(input$text)),1,5,4. n1: Number of CTA+ patients enrolled in bridging (concordance) study,NA,0,input$slide,1,input$slide,5. n11: Number of CTA+ and CDx+ out of n1,NA,1,"max(1, round(as.numeric(input$text3)) - round(as.numeric(input$text)))",1,1,6. n0: number of CTA- patients enrolled in bridging (concordance) study,NA,1,"max(1, input$slide3)",1,1,7. n01: number of CTA- and CDx+ out of n0,NA,0,1,0.1,0.5,"9. c: proportion of delta2/delta1, where delta2 is efficacy in CTA- and CDx+",NA
+3,TRUE,Tab1,BDT,Dropdown Label1,Figure,users/DT_frame2.r,iBDT CSF simulation,FALSE,1,Simulation of iBDT Critical Success Factor (CSF) analysis,1200,1500,130,0,"iBDT_CSF(
+     levInt=input$text, #set cohort lables to compare, '::' defines levels
+      n1c=input$text2,  #fixed a samples for other parameter change
+      orr0=input$text3, #ORRs of controls match to lev1
+      delta.r=input$text4,  #fixed an improved ORR effect size
+      delta.t=input$text5, #fixed TTE effect size month
+      mt0=input$text6, #tte values of control or benchmarks
+      cv=input$text7, #coefficient variation for tte
+      cutoff=input$text8, #decision threshold over ORR or delta ORR
+      nsel=input$text9,#simulate different samples
+      dorr=input$text10, #simulate different ORR effect size
+      dtte=input$text11, #simulate different TTE effect size
+      dr1r=input$text12, #simulate decision threshold
+      yellowC=input$text13 #yellow range for ORR decision thresholds
+    )",,NA,NA,input$text,1. cohort labels,input$text2,2.selected sample size,input$text3,3. ctrl ORRs,input$text4,4. selected ORR effect size,input$text5,5. selected TTE effect size,input$text6,6. ctrl TTE,input$text7,7. cv of TTE,input$text8,8. decision threshold over ORR,input$text9,9.samples sizes for simulation,input$text10,10. ORR effect sizes for simulation,input$text11,11. TTE effect size for simulation,input$text12,12. decision threshold for simulation,input$text13,13. yellow range ORR thresholds,NA,NA,NA,NA,NA,NA,"""Cervical::2L_PD-L1_CPS>1%,NSCLC::1L_IIIB/IV_PD-L1>5%,NSCLC::2L_IIIB/IV_PD-L1>5%,NSCLC::3L_IIIB/IV_PD-L1>5%,NSCLC::1Lplatinum_IIIB/IV""","1. cohort labels seprated by ','",'40',2. selected sample size,"""0.146, 0.22, 0.19, 0.18, 0.137""",3.ORRS in control arm,'0.10',4. selected ORR effect size,'4',5. selected TTE effect size,"""11,23.5, 15.5, 13.2,13.3""",6. median TTE in control arm,'0.8',7. coefficient of variation for TTE,'0.4',8. an ORR decision threshold,"""20, 40, 60, 80, 100, 120, 140, 160""",9. different samples for simulation,"""0.05, 0.1, 0.15, 0.2""",10. different ORR effect size for simulation,"""1, 2, 3, 4, 5, 6, 7""",11. different TTE effect size for simulation,"'0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,0.55,0.60,0.65,0.70'",12. different decision threshold for simulation,"""0.25, 0.4""",13. yellow range for ORR decision thresholds,,,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+4,TRUE,Tab1,BDT,Dropdown Label1,Figure,NA,Integrated Bayesian Decision Theoretic (BDT) Analysis,FALSE,1,Integrated Bayesian Decision Theoretic (BDT) Analysis,500,1500,120,0,"DT_tab <<- BDT_UaL.diff( 
+  levVars=input$text, 
+  dr_lev=input$text2, 
+   incidence=input$text3,
+   numRsp=input$text4,  
+   n_ij=input$text5,   
+   dr_th=input$text6, 
+   muTTE=input$text7,
+  sdTTE=input$text8,
+  showBar=TRUE,  
+    th.arrow= 0.8,      
+    payoff= input$text9
+)","Longer blue and green bars as well as shorter red bars give a better intuitive metrics. 
+The blue bar visualizes the utility based ORR and the green bar is based on the continues variable such as TTE. The red bar visualizes the Bayes decision loss. It is better to select the cohort with longer blue or green bars and the decision rule with shorter red bars.
+Get tumor/biomarker incidence number from https://seer.cancer.gov/explorer/application.php, which is the incidence per 100000 people. So, please devide the number by 1000. The final rate is  the number of people having the cancer in every 100 people.
+Or, download the estimates in Unitied States in 2017 (https://www.cancer.org/content/dam/cancer-org/research/cancer-facts-and-statistics/annual-cancer-facts-and-figures/2017/cancer-facts-and-figures-2017.pdf).",NA,NA,input$text,1. Define framework,input$text2,2. Define decision levels,input$text3,3. Incidence,input$text4,4. Number of responders,input$text5,5. Numbers of patients,input$text6,6. Decision threshold,input$text7,"7. Expectation of the continues variable, i.e. TTE.",input$text8,"8. Standard deviation of the continues variable, i.e. TTE",input$text9,9. Payoff values,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"""MSI-h::CRC,MSI-h::non-CRC,MSI-h::Endometrial,MSI-h::Billary,MSI-h::Gastric,MSI-h::Pancreatic,MSI-h::SCLC""",1. Define BDT framework,"""Go_if::NoGo_if,Go_if::NoGo_if, Go_if::NoGo_if,Go_if::NoGo_if,Go_if::NoGo_if, Go_if::NoGo_if,Go_if::NoGo_if""",2. Define decision levels,"""0.2,0.1,0.22,0.05,0.15,0.02,0.02""",3. Incidence,"""0.32vs0.2, 0.46vs0.2,0.36vs0.2,0.27vs0.15,0.56vs0.35,0.83vs0.35,0.99vs0.25""","4. Number or ratio of responders, ""0.3vs0.2"" is treatment vs reference.","""90,59,14,11,9,6,5""","5. Numbers of patients ""trt vs ref""","""0.3,0.3,0.3,0.3,0.3,0.3,0.3""","6. Decision threshold, eg.""0.1::0.3,0.5::0.55,0.6::0.7"" are the two thresholds for each of the 3 cohorts","""7vs5,7vs5,7vs5,7vs5,7vs5,7vs5,7vs5""","7. Expectation of the continues variable, i.e. TTE","""2vs2,2vs2,2vs2,2vs2,2vs2,2vs2,2vs2""",8. Standard deviation of the continues variable,"""20,-10""",9. Pay off values,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+5,TRUE,Tab1,BDT,Dropdown Label1,Figure,NA,Bayesian Decision Theoretic (BDT) Analysis,FALSE,1,BDT framework with CSF to evaluate the trial plan,500,1500,120,0,"DT_tab <<- BDT_UaL( 
+  levVars=input$text, 
+  dr_lev=input$text2, 
+   incidence=input$text3,
+   pBprior=input$text4,  
+   n_ij=input$text5,   
+   dr_th=input$text6, 
+   drFunc=eval(parse(text=input$text7)),  #my.eLoss
+  showBar=TRUE,  
+    th.arrow= 0.8,      
+    payoff= input$text8
+)","The blue bar visualizes the utility. The red bar visualizes the Bayes decision loss.
+Get tumor/biomarker incidence number from https://seer.cancer.gov/explorer/application.php, which is the incidence per 100000 people. So, please devide the number by 1000. The final rate is  the number of people having the cancer in every 100 people.
+Or, download the estimates in Unitied States in 2017 (https://www.cancer.org/content/dam/cancer-org/research/cancer-facts-and-statistics/annual-cancer-facts-and-figures/2017/cancer-facts-and-figures-2017.pdf).",NA,NA,input$text,1. Define framework,input$text2,2. Define decision levels,input$text3,3. Incidence,input$text4,"4. Hyper parameters ""alpha, beta""",input$text5,5. Numbers of patients,input$text6,6. Decision threshold,input$text7,7. Function getting Bayes decision loss,input$text8,8. Payoff values,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"""B1::T1::coh1,B1::T1::coh2,B1::T2::coh3""",1. Define BDT framework,"""No Go::Go,No Go::Go,No Go::Go""",2. Define decision levels,"""0.3,0.3,0.1""",3. Incidence,"""~""","4. Beta parameters ""alph beta"", eg ""1.3 1.7,1.3 1.7, 1.1 1.9""","""10, 10, 10""",5. Numbers of patients,"""0.1,0.5,0.6""","6. Decision threshold, eg.""0.1::0.3,0.5::0.55,0.6::0.7""","""my.eLoss""",7. A R function for Bayes decision loss,"""10,-1""",8. Payoff values,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+6,TRUE,Tab1,BDT,Dropdown Label1,Figure,NA,Bayesian decision-theoretic trees,FALSE,1,Basic BDT frame for trial plan evaluation,800,1500,120,0,"DT_tab <<- DT_frame( 
+  blBMK=input$text,          #Baseline Biomarkers, required input
+  tumorType=input$text2, #Types of tumors, required input
+  dose=input$text3,             #numeric values of dose levels, required input  
+  prior_ti=input$text4,        #PrioInfo Tumor Incidence: 
+                               #length is length(blBMK)*length(tumorType)
+                               #values obtained from prior knowledge
+  prior_prop=input$text5,      #proportion of patients in the subgroup of dose and bmk
+                               #length is either length(dose) or length(dose)*length(blBMK)*length(tumorType)
+                               #values obtained from prior knowledge
+  prob_stop0 = input$text6,  #Prob(not stop|dose) matching to the levels in dose
+                               #length is length(dose)
+                               #the proportions obtained from early phase trials
+  prob_BR1   = input$text7,   #Prob(BioResp=1|stop=0, dose, tumor, bmk), 
+                               #length is either length(dose) or length(dose)*length(blBMK)*length(tumorType)
+                               #values obtained from early phase trials  
+  prob_CB1_BR = input$text8,   #Prob(ClinBenefit=1|BioResp=1) and Prob(CB=1|BR=0)
+  showTree   = TRUE,           #if FASLE only return the tree table
+  showProb   = TRUE,           #if TRUE show the probablities on the tree and return the probability table
+  showBar    = TRUE,          #show the barplot of expected U(dose|{T,B})
+  
+  #other args for plotting
+  th.arrow        = 0.8,       #horizontal space between an arrow and the the target
+  th.utDB    = 1,            #vertical space between dose sign and the utility values
+  topRatio   = input$text9,            #the top ratio of joint p-values (or utilities) that need to be colored
+  topCol     = 'red' ,          #the color for the top joint p-values  
+  payoff    =input$text10   #payoff values for CB=1 and CB=0
+)","U(d,T,B) is the expected utility of the action {choosing a dose level, in a biomarker-identified subpopulation of a tumor type }. 
+Get tumor incidence number from https://seer.cancer.gov/explorer/application.php, which is the incidence per 100000 people. So, please devide the number by 1000. The final rate is  the number of people having the cancer in every 100 people.
+Or, download the estimates in Unitied States in 2017 (https://www.cancer.org/content/dam/cancer-org/research/cancer-facts-and-statistics/annual-cancer-facts-and-figures/2017/cancer-facts-and-figures-2017.pdf).",NA,NA,input$text,1. Baseline Biomarkers,input$text2,2. Tumor types,input$text3,3. Dose levels,input$text4,4. Tumor Incidence,input$text5,5. Proportion of patients among the subgroups of different doses,input$text6,6. Prob(stop=0|dose): probability of not stopping due to toxcitiy.,input$text7,"7. Prob(BioResp=1|stop=0, dose, tumor, bmk)",input$text8,8. Prob(ClinBenefit=1|BioResp=1) and Prob(CB=1|BR=0),input$text9,9. The top ratio of outcomes to be colored in red,input$text10,10. Payoff values for CB=1 and 0,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"""B1,B2""",1. Baseline Biomarkers,"""T1, T2""",2. Tumor types,"""dose1, dose2""",3. Dose levels,"""0.05, 0.1, 0.3, 0.6""",4. Tumor Incidence mapping to the 3rd column (B) or the 2nd level nodes in the tree,"""0.5, 0.5""",5. Proportion of patients among the subgroups of doses (maping to 4.),"""0.9, 0.1""",6. Prob(stop=0|dose) is 1-[dropoutRate].,"""0.1, 0.75""","7. Prob(BioResp=1|stop=0, dose, tumor, bmk)","""0.8, 0.1""",8. Prob(ClinBenefit=1|BioResp=1) and Prob(CB=1|BR=0),"""0.2""",9. The top ratio of outcomes to be colored in red,"""100,-100""",10. Payoff values for CB=1 and 0,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+7,TRUE,Tab3,SubgPwrCal,Dropdown Label1,Figure,NA,Power Calculator,FALSE,1,Power analysis for two-group comparison test,1200,1500,160,0,"BEACH_PowerPlot(n.rg=input$text,
+                  n.vl=input$slide, 
+                  theta.rg=input$text2,
+                  theta.vl=input$slide2, 
+                  sgm.rg=input$text3, 
+                  sgm.vl=input$slide3, 
+                  muA=as.numeric(input$text4), 
+                  prev=input$text5, 
+                  alpha=input$slide4, 
+                  simSize=as.numeric(input$text6),
+                  m1=round(as.numeric(input$text7)),
+                  r1=input$text8
+)",,NA,NA,input$text,1. Range of sample size,input$slide,2. Sample size,input$text2,3. Range of difference between two group means,input$slide2,4. Difference between two group means,input$text3,5. Range of observed standard deviation,input$slide3,6. Standard deviation,input$text4,7. The lower group mean,input$text5,8. Range of the prevalence for the lower-mean group,input$slide4,9. Significant level,input$text7,10. Number of pairs of comparisons,input$text8,11. proportions in the groups with higher means,input$text6,12. Number of simulated points,NA,NA,NA,NA,NA,NA,NA,NA,"""10~200""",1. Range of sample size,"""20000~50000""",3. Range of the difference between two groups,"""25000~100000""",5. Range of total standard variance,"""50000""",7. The lowest group-mean,"""0.15,0.55""",8. Range of the prevalence of the lowest-mean group,"""100""",12. Number of simulated points,"""1""",10. Number of pairs of comparisons,"""NA""","11. Proportions in the groups with higher means (e.g. ""0.2, 0.8"" for two comparisons)",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,spF(input$text)[1],spF(input$text)[2],1,spF(input$text)[1],2. Sample size,NA,spF(input$text2)[1],spF(input$text2)[2],diff(spF(input$text2))/100,spF(input$text2)[1],4. Difference between the group means,NA,spF(input$text3)[1],spF(input$text3)[2],diff(spF(input$text3))/100,spF(input$text3)[1],6. Total standard deviation,NA,0,0.2,0.001,0.05,9. Significance level,NA,NA,NA,NA,NA,NA,NA
+8,TRUE,Tab4,NZI_Bayesian,Dropdown Label1,Figure,users/nzi_source.r,Near-Zero-Informed Bayesian method for drug-toxicity stopping rule analysis,FALSE,1,Near-Zero-Informed Bayesian method for drug-toxicity stopping rule analysis,900,1800,180,0," rsk.tb1<<- 
+    nzib(stopAt=input$text,
+         N1=input$text2,         #max number of samples
+       maxIDR=input$text3, #max expected acceptable occurrence rate
+       plot.type=as.numeric(substring(input$radio2, 1, 1)), #plot type 1,2,3,4
+       normIDR=input$text4,  #normal occurrence rate, default maxIDR/2 
+       bay.prior=input$text5, #hyper parameter in beta-binomial
+       rsk.xlim=input$text6,    #x-axis range for risk plot
+       rsk.ylim=input$text7,    #y-axis range for risk plot
+       errI.xlim=input$text8,  #x-axis range for type I error plot
+       plot4=as.logical(input$radio), 
+       B1=input$text9,
+       goTh=input$text10
+  )",,NA,NA,input$text,1. stoping rule threshold for number of Idiosyncratic Adverse Drug Reaction (IADR),input$text2,2. max number of samples,input$text3,3. max expected acceptable occurence rate of IADR,input$text4,4. expected occurence rate of IADR considered as normal,input$text5,5. Hyper parameters for traditional Bayesian,input$text6,6. X-axis range in risk plot,input$text7,7. Y-axis range in risk plot,input$text8,8. X-axis range in type I error plot and Superiority plot,input$radio,9. show plot C-E,input$text9,10. number of simulations,input$radio2,11. select plot type,input$text10,12. thresholds,NA,NA,NA,NA,9. Show plot D-F,"c('FALSE', 'TRUE')",11. select plot type,"c('1. NZI Bayesian', '2. NZI Bayesian and Binomial', '3. NZI Bayesian and another Bayesian', '4. show all the 3 lines')",9,1. stopping threshold for number of Idiosyncratic Adverse Drug Reaction (#IADR),30,2. number of samples (n),recPa(input$text2),3. max expected acceptable occurence rate of IADR (default is 1/n),"ifelse( substring(input$radio2, 1, 1)%in%c('1','3'), NULL, ifelse(is.null(input$text2), 0.1, recPa(input$text2)/2 )) ","4. expected occurence rate of IADR considered as normal, only useful for frequentist Binomial","ifelse( substring(input$radio2, 1, 1)%in%c('1','2'), NULL,  ""alpha=0.5, beta=0.5"")",5. Hyper parameters in Beta distribution for traditional Bayesian,"""""",6. X-axis range in risk plot,"""""",7. Y-axis range in risk plot,"""""",8. X-axis range in type I error plot and Superiority plot,5000,10. number of simulations,"""0.05, 0.2""","11. Thresholds for go/no-go ""type I error, type II error""",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+9,TRUE,Tab4,NZI_Bayesian,Dropdown Label1,Figure,NA,Distribution plots,FALSE,1,Distribution plots,600,1600,180,0,"bbin(
+    prior.a=input$text, #1. parameters in p~Beta(a=, b=) prior distribution
+    prior.b=input$text2, #2. parameters in p~Beta(a=, b=) prior distribution
+    N1=input$text3,            #3. planned sample size
+    pa=input$text4,           #4. expected average for event rate p
+    p.xL=input$text5,        #5. xlim for beta distribution
+    x.xL=input$text6         #6. xlim for beta-binomial distribution
+  )",,NA,NA,input$text,"1. parameters in p~Beta(a=, b=) prior distribution",input$text2,"2. parameters in p~Beta(a=, b=) prior distribution",input$text3,3. planned sample size,input$text4,4. expected average for event rate p,input$text5,5. xlim for beta distribution,input$text6,6. xlim for beta-binomial distribution,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"""0.5,1, 0.002""","1. parameters a in p~Beta(a=, b=) prior distribution","""0.5, 1, 1""","2. parameters b in p~Beta(a=, b=) prior distribution","""45""",3. planned sample size,0.0051,4. expected average for event rate p,"""0,1""",5. xlim for beta distribution,"""""",6. xlim for beta-binomial distribution,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+10,FALSE,Tab3,FDA log,Dropdown Label1,Table,NA,FDA drug approvals' log,FALSE,1,FDA drug approvals' log,300,300,NA,0,"dlog <<- readLines('data/FDA_Onc_log.txt')[-1];
+mySelect(dlog, sp=input$text, ctype=input$radio, fdaLink=input$radio2)
+","paste(""Data from"",FDA.Link)",NA,NA,input$text,1. Search Key Word,input$radio,2. Recommend key words,input$radio2,3. Get FDA online log,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,2. Recommend key words,key.words,3. Get FDA online log,"c('FALSE', 'TRUE')","""NSCLC&2017""",1. Search keys,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+11,TRUE,cd,CD file,Dropdown Label3,Table,NA,Show the current configuration file,FALSE,1,Configuration File (CD),0,0,NA,0,Vdic0,,NA,NA,input$radio,any label,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+12,TRUE,rcode,R Code,NA,--,rcode.r,NA,NA,NA,NA,0,0,NA,0,return(NULL),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
