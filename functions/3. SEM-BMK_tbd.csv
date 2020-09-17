@@ -1,0 +1,72 @@
+Num,Add,Tab.value,Tab.label,select.label,Type,Source,Request.Name,Condition,Layout,Title,height,width,res,tmp,PlotCode,FootCode,StatNote,StatModel,uiInput1,uilab1,uiInput2,uilab2,uiInput3,uilab3,uiInput4,uilab4,uiInput5,uilab5,uiInput6,uilab6,uiInput7,uilab7,uiInput8,uilab8,uiInput9,uilab9,uiInput10,uilab10,uiInput11,uilab11,radio.label,radio.choice,radio.label2,radio.choice2,check.label,check.choice,check.label2,check.choice2,text.label,text.value,text.label2,text.value2,text.label3,text.value3,text.label4,text.value4,text.label5,text.value5,text.label6,text.value6,text.label7,text.value7,text.label8,text.value8,text.label9,text.value9,slide.label,slide.min,slide.max,slide.by,slide.value,dropdown.label,dropdown.choice,dropdown.default,dropdown.multiple,dropdown.label2,dropdown.choice2,dropdown.default2,dropdown.multiple2
+0,TRUE,NA,NA,NA,title_image,NA,NA,NA,NA,logo.png,NA,NA,NA,NA,NA,,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+0,TRUE,NA,NA,NA,title_text,NA,NA,NA,NA,Biomarker Analysis with SEM,NA,NA,NA,NA,NA,,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+1,TRUE,Tab1,Data,Dropdown Label1,Figure,users/JM2018.r,Get the data set,FALSE,1,Data Preparation,600,600,90,0,"  if(input$radio=='use the default'){
+    load(file='data/sem_sim1_jsm.Rdata')
+    allD <<- allD.d
+    plottext(check.nm(allD))
+  }else if(input$radio=='use uploaded data'){
+    allD <<- indataset[[1]]
+    plottext(check.nm(allD))
+  }else if(input$radio=='save as default'){
+    allD.d <- allD
+    save(allD.d, file='data/sem_sim1_jsm.Rdata')
+    plottext(check.nm(allD.d))
+  }else{ #create the 
+    sim1 <-   sim.bmk1(
+      n=round(as.numeric(input$text)), #the number of patients
+      bmkType=input$slide, #if 1 cateogrial, then binary variable; else contineous var
+      bmkP.norm=data.frame(mu=as.numeric(strsplit(input$text2, split=',')[[1]]), 
+                           sd=as.numeric(strsplit(input$text3, split=',')[[1]])), 
+      #parameters for random norm if bmkType!=1
+      bmkIns=as.numeric(input$text4),#biomarker insidence for group1
+      plotbmk=TRUE,#whether plot a histogram of bmk.t1
+      lambda=1,  #baseline  hazards
+      #coefficients of the true bmk in TC model and Survival model
+      beta=as.numeric(strsplit(input$text5, split=',')[[1]]), 
+      #good candidate is between 1 and 2 (absolute value)
+      m.bmk=c(as.numeric(input$text6), #Numb of true chgFromBsl markers
+              as.numeric(input$text7), #Numb of false categorical bmks
+              as.numeric(input$text8), #Numb of false numeric bmks
+              as.numeric(input$text9)) #Numb of false chgFromBsl markers
+    )
+    allD <<- sim1$all
+  }
+  bmk.nms <<- get.cnm(allD, 'bmk.')
+  pmk.nms <<- get.cnm(allD, 'pmk.')
+  totPlot<<-bmkJM.plot(
+    allData=allD,
+    tte.nm='tte', 
+    cnsr.nm='cnsr',
+    tc.nm='tc',  
+    bor.nm = 'bor',
+    bmk.nm=bmk.nms,
+    pmk.nm=pmk.nms,
+    getTotNum = TRUE,
+    plotAll=F
+  )",,NA,NA,input$radio,1. Get the data,input$text,2. sample size,input$slide,3. predictive marker type,input$text2,4. two means of predictive marker,input$text3,5. two std of predictive marker,input$text4,6. Incidence of predictive marker,input$text5,7. coefficients of predictive marker (from bmk.t1 to TC and Survival models),input$text6,8. Number of changeFromeBaseline markers (pmk.t1),input$text7,9. Number of baseline binary markers not correlated with efficacy,input$text8,10. Number of baseline continueous markers not correlated with efficacy,input$text9,11. Number of chageFromBaseline markers not correlated with efficacy,1. Get the data,"c(""simulate a new set"", ""save as default"", ""use the default"", ""use uploaded data"")",NA,NA,NA,NA,NA,NA,2. Sample Size,"ifelse(input$radio=='simulate a new set','30', NULL)",4. Two means for a Normally distributed predictive marker,"ifelse(input$radio=='simulate a new set','1,3', NULL)",5. Two standard error for a Normally distributed predictive marker,"ifelse(input$radio=='simulate a new set','0.35,0.35', NULL)",6. Incidence of the predictive marker,"ifelse(input$radio=='simulate a new set','0.5', NULL)",7. Coefficients of the predictive marker (bmk.t1) in the TumorChange and Survival models,"ifelse(input$radio=='simulate a new set','-0.5, 0.5', NULL)",8. Number of changeFromBaseline markers (pmk.t1) correlated with TC,"ifelse(input$radio=='simulate a new set','1', NULL)",9. Number of baseline binary markers not correlated with efficacy,"ifelse(input$radio=='simulate a new set','2', NULL)",10. Number of baseline continueous markers not correlated with efficacy,"ifelse(input$radio=='simulate a new set','2', NULL)",11. Number of changeFromBaseline markers not correlated with efficacy,"ifelse(input$radio=='simulate a new set','2', NULL)",3. Type of the predictive marker: 1 for binary,1,2,1,1,NA,NA,NA,NA,NA,NA,NA,NA
+2,TRUE,Tab1,Data,Dropdown Label1,Table,NA,Table of the data set,FALSE,1,Data Set,30,600,NA,0,"data.frame(allD[1:input$slide,input$dropdown])",,NA,NA,input$dropdown,1. Choose variable names,input$slide,2. Number of rows,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,2. Choose number of rows,1,nrow(allD),1,"min(50, nrow(allD))",1. Choose variable name,colnames(allD),"colnames(allD)[1:min(20, ncol(allD))]",TRUE,NA,NA,NA,NA
+3,TRUE,Tab1,Data,Dropdown Label1,Figure,NA,Visually review the data set,FALSE,1,Data Visualization,600,600,90,0,"  bmkJM.plot(
+    allData=allD,
+    tte.nm='tte', 
+    cnsr.nm='cnsr',
+    tc.nm='tc',  
+    bor.nm = 'bor',
+    bmk.nm=bmk.nms,
+    pmk.nm=pmk.nms,
+    getTotNum = F,
+    plotAll=F,
+    plotID = input$slide
+  )",,NA,NA,input$slide,1. select plot ID,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,1. Select plot ID,1,totPlot,1,1,NA,NA,NA,NA,NA,NA,NA,NA
+4,TRUE,Tab2,SEM,Dropdown Label1,Figure,NA,Biomarker Analysis with SEM,FALSE,1,"paste(input$dropdown, collapse=', ')",600,600,90,0,"  if(input$slide==0){
+    bmk.nm.sel<-input$dropdown
+  }else{bmk.nm.sel<-bmk.nms[input$slide]}
+  fit0 <- sem.struct(allData=allD, 
+                     rmNode=as.logical(input$radio), 
+                     rmTh=as.numeric(strsplit(input$text, split=',')[[1]]),
+                     bmk.nm=bmk.nm.sel,
+                     pmk.nm=input$dropdown2,
+                     shortNM=as.logical(input$radio2) )
+title(paste0(paste(bmk.nm.sel, collapse=', '), '\nn=', nrow(allD)))",,NA,NA,input$radio,1. Whether keep the nodes with edges estimate above threshold,input$text,2. Thresholds for estimates and standardized estimates,input$slide,3. Index of baseline markers,input$dropdown,4. select baseline markers,input$dropdown2,5. select changeFromBaseline markers,input$radio2,6. Shrink nodes names,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,1. Whether keep the nodes with edge estimates above threshold,"c('TRUE', 'FALSE')",6. Shrink nodes names,"c('TRUE', 'FALSE')",NA,NA,NA,NA,2. Thresholds for estimates and standardized estimates,"'0.2, 0.2'",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,3. Index of baseline markers,0,length(bmk.nms),1,0,4. Select baseline markers,if(input$slide>0){bmk.nms[input$slide]}else{bmk.nms},"bmk.nms[1:min(20,length(bmk.nms))]",TRUE,5. Select changeFromBaseline markers,pmk.nms,"pmk.nms[1:min(20,length(pmk.nms))]",TRUE
+5,TRUE,cd,CD file,Dropdown Label1,Table,NA,Show the current configuration file,FALSE,1,Configuration File (CD),0,0,NA,0,Vdic0,,NA,NA,input$radio,any label,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+6,TRUE,rcode,R Code,NA,--,rcode.r,NA,NA,NA,NA,0,0,NA,0,return(NULL),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
