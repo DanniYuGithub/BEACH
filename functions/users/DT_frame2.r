@@ -1,4 +1,167 @@
-#Author: Danni Yu (danni.yu@gmail.com)
+#define global variables
+if(TRUE){
+  fL<<-'https://www.fda.gov/drugs/informationondrugs/approveddrugs/ucm279174.htm'
+  FDA.Link <<- fL
+}
+
+
+
+#Begin 0. ---------------------------------------------------------------------#
+if(TRUE){
+  #function: get the estimate of p=Pr(CDA+|CDx+), the TRUE positive rate, or sensitivity
+  #output: p_hat and Var_p_hat
+  TPR <<- function(
+    m1,  #number of enrolled patients who are CTA+ and randomly assigned to treatment or control
+    m,   #the total number of screened patients with valid CTA results (eligible for bridging study)
+    n11, #number of CTA+ and CDx+ out of n1
+    n1,  #number of CTA+ patients enrolled in bridging (concordance) study
+    n01, #number of CTA- and CDx+ out of n0
+    n0   #number of CTA- patients enrolled in bridging (concordance) study
+  ){
+    if(FALSE){
+      phi_hat    =0.09  #Pr(CTA+)
+      psi_hat_11 =0.95  #Pr(CDx+|CTA+), sensitivity
+      psi_hat_10 =0.95  #Pr(CDx+|CTA-), 1-specificity
+    }
+    if(m1>m)   {print('Error: m1 > m. So m1 is set to be m.'); m1 <- m}
+    if(n1>m1)   {print('Error: n1 > m1. So n1 is set to be m1'); n1 <- m1}
+    if(n11>n1) {print('Error: n11 > n1. So n11 is set to be n1.'); n11 <- n1}
+    if(n0>(m-n1)) {print('Error: n0 > m-n1. So n0 is set to be m-n1.'); n0 <- m-n1}
+    if(n01>n0) {print('Error: n01 > n0. So n01 is set to be n0.'); n01 <- n0}
+    
+    phi_hat     <- m1/m
+    var_phi_hat <- phi_hat * (1-phi_hat) / m
+    psi_hat_11     <- n11/n1
+    var_psi_hat_11 <- psi_hat_11 * (1-psi_hat_11) / n1
+    psi_hat_10     <- n01/n0
+    var_psi_hat_10 <- psi_hat_10 * (1-psi_hat_10) / n0
+    
+    p_hat <- (phi_hat*psi_hat_11)/(phi_hat*psi_hat_11+(1-phi_hat)*psi_hat_10)
+    var_p_hat <- (p_hat*(1-p_hat))^2 *
+      (  var_phi_hat/((phi_hat*(1-phi_hat))^2) +
+           var_psi_hat_11/(psi_hat_11^2) + 
+           var_psi_hat_10/(psi_hat_10^2)   )
+    se_p_hat <- sqrt(var_p_hat)
+    
+    return(data.frame(phat=p_hat, var_phat=var_p_hat, 
+                      phat_95CI_low=max(0, p_hat-1.96*se_p_hat),
+                      phat_95CI_high=min(1, p_hat+1.96*se_p_hat) ))
+  } #end of TPR
+  
+  #function: get estimate of efficacy of briding study
+  EFF <<- function(
+    delta1_hat=0.5,  #efficacy in subgroup CDA+ and CDx+
+    var_delta1_hat,  
+    c = 1, #proportion of delta2/delta1, where delta2 is efficacy in CDA- and CDx+
+    p_hat,    #p=Pr(CDA+|CDx+)   
+    var_p_hat # obtain from the function of PPV   
+  ){
+    
+    #a vector of bridging efficacy given different c
+    delta_CDx_pos_hat <- ((1-c)*p_hat+c)*delta1_hat
+    var_delta_CDx_pos_hat <- (2*p_hat^2-2*p_hat+1)*var_delta1_hat +
+      ( ((1-c)^2)*(delta1_hat^2) + 2*var_delta1_hat ) * var_p_hat
+    se_delta_CDx_pos_hat <- sqrt(var_delta_CDx_pos_hat)
+    
+    return(data.frame(dhat=delta_CDx_pos_hat,
+                      var_dhat=var_delta_CDx_pos_hat,
+                      dhat_95CI_low=delta_CDx_pos_hat-1.96*se_delta_CDx_pos_hat,
+                      dhat_95CI_high=delta_CDx_pos_hat+1.96*se_delta_CDx_pos_hat))
+  }#end of EFF
+  
+  #calculate the variance
+  get_var_delta1_hat <<- function(
+    orr,  #single-arm objective response rate in subgroup CDA+ and CDx+
+    n11,  #number of CTA+ and CDx+ out of n1
+    hr,   #two-arm hazard ratio (treatmentHazardRatio/controlHazardRatio)
+    nExpectEvt=round(n11*c(0.4, 0.4)), #expected number of events (i.e. death) in 
+    #treatment and control
+    method='ORR' #or 'logHR'
+  ){
+    if(method=='ORR'){
+      delta1_hat <- orr
+      var1 <- delta1_hat*(1-delta1_hat)/n11
+      return(data.frame(est=delta1_hat, estVar=var1))
+    }else if (method=='logHR'){
+      #assume proportional hazards: the hr is consistent over time and
+      #any differences are due to random sampling.
+      #assume the distribution of the time-to-event measure has an
+      #exponential distribution
+      #logrank approach: as part of the KM calculation, compute the number
+      #of observed events in each group(Oa and Ob), and the number of 
+      #expected events assuming a null hypothesis of no difference in 
+      #survival (Ea and Eb)
+      #http://aac.asm.org/content/48/8/2787.full
+      if(sum(nExpectEvt)>n11){
+        r1 <- nExpectEvt[1] /sum(Control)
+        nr1 <- round(r1*n11)
+        nr2 <- n11-nr1
+        nExpectEvt <- c(nr1, nr2)
+      }
+      var_loghr <-sum(1/nExpectEvt)
+      return(data.frame(est=log(hr), estVar=var_loghr))
+    }else{
+      print('Currently only two methods (ORR or logHR) are avaible.')
+      var1 <- NA
+      return(data.frame(est=NA, estVar=NA))
+    }
+    
+  } #end of ge_var_delta1_hat
+  
+  #estimate dhat and phat if the efficacy is ORR
+  est_ORR <<- function(
+    m1=60, m=round(60/0.10), n11=29, n1=30, n01=1, n0=10,
+    orr=0.4, c=0.5
+  ){    
+    tpr1 <- TPR(m1=m1, m=m, n11=n11, n1=n1, n01=n01, n0=n0)
+    var_d1 <- get_var_delta1_hat(orr=orr, n11=n11, method='ORR')
+    eff1 <- EFF(delta1_hat=var_d1$est[1], var_delta1_hat=var_d1$estVar, c=c, 
+                p_hat=tpr1$phat, var_p_hat=tpr1$var_phat)
+    eff1$dhat_95CI_low <- max(0, eff1$dhat_95CI_low)
+    eff1$dhat_95CI_high <- min(1, eff1$dhat_95CI_high)
+    
+    return(list(tpr1=tpr1, eff1=eff1))
+  }#end of estimate dhat and phat
+  
+  
+  #plot
+  plot_dp <<- function(
+    tpr0,     #the output for TPR
+    eff0,     #the otuput EFF
+    xlim0=c(0,1), #range of X-axis
+    ylim0=NULL,   #range of Y-axis
+    xlab0= 'Concordance Pr(CTA+|CDx+)', 
+    ylab0= 'ORR in CDx+ patients',
+    add=FALSE #add the est bars to current plot if TRUE
+  ){
+    if(is.null(ylim0)){
+      ylim0 <- range(as.vector(eff0[, c('dhat_95CI_low', 'dhat_95CI_high')]))
+    }
+    if(is.character(ylim0) & grepl(',', ylim0)){
+      y12<-strsplit(ylim0, split=',', fixed=TRUE)[[1]]
+      ylim0<-c(as.numeric(y12))
+    }
+    if(!add){
+      plot(eff0$dhat~tpr0$phat, type='b', col='black', pch=16, 
+           xlab=xlab0, ylab=ylab0, xlim=xlim0, ylim=ylim0)
+    }else{
+      points(eff0$dhat~tpr0$phat, type='b', col='black', pch=16,
+             xlab=xlab0, ylab=ylab0, xlim=xlim0, ylim=ylim0)
+    }
+    #add 95%CI for phat
+    arrows(x0=tpr0$phat_95CI_low,   y0=eff0$dhat, 
+           x1=tpr0$phat_95CI_high, y1=eff0$dhat, 
+           code=3, angle=90, length=0.15)
+    #add 95%CI for dhat
+    arrows(y0=eff0$dhat_95CI_low,   x0=tpr0$phat, 
+           y1=eff0$dhat_95CI_high, x1=tpr0$phat, 
+           code=3, angle=90, length=0.15)
+    
+  }#end of plot_dp
+  
+}#End 0. ---------------------------------------------------------------------#
+
+
 
 #Begin 1. ---------------------------------------------------------------------#
 if(TRUE){
@@ -599,13 +762,13 @@ if(TRUE){
                              "\nI=", incd[o],
                              ", U=", round(U[[o]],3),
                              ", p=", round(p.1[[o]],3)  ), 
-                      paste0(drLV[[o]][1],": r<=", th2[1],
+                      paste0(drLV[[o]][1],": go if r>", th2[1],
                              ", E(L)=", round(eL[1],3)))
         if(num.dr==1) next
         for(h in 2:num.dr){
           if(h==num.dr){
             iLV[[o]] <- c(iLV[[o]], rep('', num.var), 
-                          paste0(drLV[[o]][h], ": r<=",th2[h-1],
+                          paste0(drLV[[o]][h], ": stop if r<=",th2[h-1],
                                  ", E(L)=", round(eL[h],3))  )
           }else{
             iLV[[o]] <- c(iLV[[o]], rep('', num.var), 
@@ -708,7 +871,6 @@ if(TRUE){
   }
   
 }
-
 #define global variables for FDA_log analysis
 if(TRUE){
   #get a subset
@@ -723,8 +885,6 @@ if(TRUE){
                      allkeys=key.words  ){
     
     if(!is.null(fdaLink)&&as.logical(fdaLink)){
-      fL<-'https://www.fda.gov/drugs/informationondrugs/approveddrugs/ucm279174.htm'
-      #FDA.Link <<- fL
       vec1 <- readLines(fL)
       #vec1 <- vec1[grepl('<li>', vec1)]
       vec1 <- vec1[grepl('approv', vec1)]
@@ -770,6 +930,7 @@ if(TRUE){
   }
 }
 #End 2. -----------------------------------------------------------------------#
+
 
 
 #Begin 3. ---------------------------------------------------------------------#
@@ -861,20 +1022,23 @@ if(TRUE){
     
     #construct loss elements based on the higher bound for the lowest level
     #i<-1
-    els.h<-abs(xs_lev - 1)*abs(xs-th[1])*y2sampleD.prob
-    e_loss[1]<-sum(els.h[xs_lev>1])
+    els.h<-abs(xs-th[1])*y2sampleD.prob
+    e_loss[1]<-sum(els.h[xs_lev==1])
     
     #expected loss from level 2 to lev_a
-    for(i in 2:len_a){#if taking the action as level i
-      els.h<-abs(xs_lev - i)*abs(xs-th[i])*y2sampleD.prob
-      els.l<-abs(xs_lev - i)*abs(xs-th[i-1])*y2sampleD.prob
-      e_loss[i] <- sum(els.h[xs_lev>i]) + sum(els.l[xs_lev<i])
+    i<-2
+    while(i>=2 & i<=len_a){#if taking the action as level i
+      els.h<-abs(xs-th[i])*y2sampleD.prob
+      els.l<-abs(xs-th[i-1])*y2sampleD.prob
+      els <- els.h+els.h
+      e_loss[i] <- sum(els[xs_lev>=i-1 & xs_lev<i])
+      i<-i+1
     }
     
     #for highest level
     #construct loss elements based on the lower bound
-    els.l<-abs(xs_lev - len_a-1)*abs(xs-th[len_a])*y2sampleD.prob
-    e_loss[len_a+1]<-sum(els.l[xs_lev<=len_a])
+    els.l<-abs(xs-th[len_a])*y2sampleD.prob
+    e_loss[len_a+1]<-sum(els.l[xs_lev>len_a])
     
     if(recom.th){
       return(list(e_loss=e_loss, th=th, p.1g2=prob.1g2))
@@ -927,7 +1091,8 @@ if(TRUE){
     #dr_th="0.9::0.3,"
     #input: [th, n, p_pos]
     #output: a vector of Bayes decision loss
-    showBar=TRUE,                #show the barplot of utility & loss
+    showPlot=TRUE,  showBar=TRUE,      #show the barplot of utility & loss
+    onebar=TRUE,                 #only show integrated bar at left
     th.arrow= 0.8,               #horizontal space between an arrow and target
     payoff= c(10, -1),            #payoff value for utility, only two values
     #gain vs lost
@@ -1044,14 +1209,6 @@ if(TRUE){
                 prob.ctr<-p.0p.ctr[o];
                 p.0p.ctr[o]<-p.0p.ctr[o]*n_1.ctr[o]
               }
-              if(F){
-              sam.trt<-rbinom(Bsample, size=n_1.trt[o], 
-                              prob=p.0[[o]][1]/sum(p.0[[o]]) )
-              sam.ctr<-rbinom(Bsample, size=n_1.ctr[o], 
-                              prob=prob.ctr )
-              sam.trt<-sam.trt[!is.na(sam.trt) & is.finite(sam.trt)]
-              sam.ctr<-sam.ctr[!is.na(sam.ctr) & is.finite(sam.ctr)]
-              }
               sam.trt <- sam.ctr <- 0:n_1.trt[o]
               sam.trt.prob<-dbinom(sam.trt, size=n_1.trt[o], 
                               prob=p.0[[o]][1]/sum(p.0[[o]]) )
@@ -1157,20 +1314,23 @@ if(TRUE){
       #p.2 is the posterior prob for benefit.
       iLV <- E.L <- U <- Utte <- p.1 <-p.2 <- list()
       for(o in 1:length(LV)){
-        #conver the ORR_trt decision thresholds into numRsp_trt
+        #convert the ORR_trt decision thresholds into numRsp_trt
         th2.lab<-th2<-round(th1[[o]]*n_1[o])
         
         #eLoss.diff(th, y2sampleD)
         if(useRspDiff){
           #if benchmark ref is available then the threshold th2 change to be
-          #the difference. But th2.lab still keep as the original one
+          #the difference. 
           th2 <- round((th1[[o]]-p.0p.ctr[o]/n_1.ctr[o])*n_1[o])
           print(th2); print(paste("length(RT.diff[[o]])", length(RT.diff[[o]])));
+          
           eL <- eLoss.diff(th=th2, 
-                           sample1=RT.diff[[o]]$sample1,
-                           sample2=RT.diff[[o]]$sample2,
-                           sample1.prob=RT.diff[[o]]$sample1.prob,
-                           sample2.prob=RT.diff[[o]]$sample2.prob)
+                         sample1=RT.diff[[o]]$sample1,
+                         sample2=RT.diff[[o]]$sample2,
+                         sample1.prob=RT.diff[[o]]$sample1.prob,
+                         sample2.prob=RT.diff[[o]]$sample2.prob)
+          #normalize the loss
+          eL$e_loss <- eL$e_loss/sum(eL$e_loss)
           #probability of the difference pi_trt-pi_ctr>0
           print(paste0('p.1[[',o,']]=', p.1[[o]] <- eL$p.1g2))
           eL <- eL$e_loss
@@ -1179,19 +1339,24 @@ if(TRUE){
           p.1[[o]] <- p.0[[o]][1]/sum(p.0[[o]])
           print(p.1[[o]])
           eL <- my.eLoss(th=th2, n=n_1[o], p_pos=p.1[[o]] )
+          #normalized the loss
+          eL <- eL/sum(eL)
         }
         E.L[[o]]<-eL  #expected loss
         
         #expected utility based on ORR
-        U[[o]] <- incd[o]*n_rt[o]*p.1[[o]]*payoff[1]+
-          incd[o]*n_rt[o]*(1-p.1[[o]])*payoff[2]
+        # U[[o]] <- incd[o]*n_rt[o]*p.1[[o]]*payoff[1]+
+        #   incd[o]*n_rt[o]*(1-p.1[[o]])*payoff[2]
+        U[[o]] <- incd[o]*p.1[[o]]*payoff[1] + incd[o]*(1-p.1[[o]])*payoff[2]
         
         #expected utility based on TTE
         if(useTteDiff){
           #P(mu_trt-mu_ctr>0|...)
           p.2[[o]] <- mean(tte.diff[[o]]>0)
-          Utte[[o]] <- incd[o]*n_rt[o]*p.2[[o]]*payoff[1]+
-            incd[o]*n_rt[o]*(1-p.2[[o]])*payoff[2]
+          # Utte[[o]] <- incd[o]*n_rt[o]*p.2[[o]]*payoff[1]+
+          #   incd[o]*n_rt[o]*(1-p.2[[o]])*payoff[2]
+          Utte[[o]] <- incd[o]*p.2[[o]]*payoff[1]+
+            incd[o]*(1-p.2[[o]])*payoff[2]
         }
         
         if(o>1){
@@ -1215,18 +1380,23 @@ if(TRUE){
                                            ", s_trt=", tte.sd[[o]][1],
                                            ", s_ref=", tte.sd[[o]][2]), 
                                     "")), 
-                      paste0(drLV[[o]][1],": r<=", th2.lab[1],
+                      paste0(drLV[[o]][1],
+                             ifelse(useRspDiff, " if d_r<=", " if r<="),
+                             th2.lab[1],
                              ", E(L)=", round(eL[1],3)))
         if(num.dr==1) next
         for(h in 2:num.dr){
           if(h==num.dr){
             iLV[[o]] <- c(iLV[[o]], rep('', num.var), 
-                          paste0(drLV[[o]][h], ": r<=",th2.lab[h-1],
+                          paste0(drLV[[o]][h], 
+                                 ifelse(useRspDiff," if d_r>", " if r>"),
+                                 th2.lab[h-1],
                                  ", E(L)=", round(eL[h],3))  )
           }else{
             iLV[[o]] <- c(iLV[[o]], rep('', num.var), 
                           paste0(drLV[[o]][h], ": ",th2.lab[h-1],
-                                 "<= r <",th2.lab[h],
+                                 ifelse(useRspDiff,"<= d_r <" , "<= r <"),
+                                 th2.lab[h],
                                  ", E(L)=", round(eL[h],3))  )
           }
         }
@@ -1284,19 +1454,22 @@ if(TRUE){
         y.tt0 <- y.tt
       }
       
-      
-      par(mar=c(0.2, 0.2, 0.2, 0.2), mfrow=c(1,1))
-      plot(y~x, data=pnt, col='gray80', pch=pnt$pch,
-           ylim=c(0, tot.row), xlim=c(0, tot.col2+shf+0.5),
-           axes=F, ylab='', xlab='')
-      text(x=pnt$x, y=pnt$y, labels=pnt$lab, adj=-0.07)
-      arrows(x0=arr$x0, y0=arr$y0, x1=arr$x1, y1=arr$y1, 
-             length=0.1, lty=arr$lty, lwd=arr$lwd, 
-             col=arr$col)
+      if(showPlot){
+        par(mar=c(0.2, 0.2, 0.2, 0.2), mfrow=c(1,1))
+        plot(y~x, data=pnt, col='gray80', pch=pnt$pch,
+             ylim=c(0, tot.row+0.5), xlim=c(0, tot.col2+shf+0.5),
+             axes=F, ylab='', xlab='')
+        text(x=pnt$x, y=pnt$y, labels=pnt$lab, adj=-0.07)
+        arrows(x0=arr$x0, y0=arr$y0, x1=arr$x1, y1=arr$y1, 
+               length=0.1, lty=arr$lty, lwd=arr$lwd, 
+               col=arr$col)
+        text(x=0, y=tot.row+0.5, labels='Utility', col='blue')
+        text(x=tot.col2+shf, y=tot.row+0.5, labels='Risk', col='red')
+      }
     }
     
     #add barplot of utility and loss
-    if(showBar){
+    if(showBar&showPlot){
 #      bar.wid <- 8
       u.x0<-rep(0, length(LV))
       u.y0<-which(varMat[,ncol(varMat)-1]!='')
@@ -1306,13 +1479,21 @@ if(TRUE){
       col.bar1tte <- rgb(0, 100, 0, alpha=80, maxColorValue=255)  #darkgreen
       abline(v=0, col=col.bar1)
       for(i in 1:length(u.y0)){
-        lines(x=c(u.x0[i], u.x1[i]), y=c(u.y0[i], u.y0[i]),
-              lwd=bar.wid, 
-              col=col.bar1)
-        if(useTteDiff){
-          lines(x=c(u.x0[i], utte.x1[i]), y=c(u.y0[i], u.y0[i])+0.1,
+        if(onebar & useTteDiff){
+          uInt.x1<-u.x1[i]*utte.x1[i]
+          lines(x=c(u.x0[i], uInt.x1), 
+                y=c(u.y0[i], u.y0[i]),
+                lwd=bar.wid, col=col.bar1)
+          text(x=u.x0[i], y=u.y0[i], labels=round(uInt.x1, 3))
+        }else{
+          lines(x=c(u.x0[i], u.x1[i]), y=c(u.y0[i], u.y0[i]),
                 lwd=bar.wid, 
-                col=col.bar1tte)
+                col=col.bar1)
+          if(useTteDiff){
+            lines(x=c(u.x0[i], utte.x1[i]), y=c(u.y0[i], u.y0[i])+0.1,
+                  lwd=bar.wid, 
+                  col=col.bar1tte)
+          }
         }
       }
       
@@ -1328,15 +1509,512 @@ if(TRUE){
       }
     }
     
-    return(list(dat=varMat, BayesLoss=E.L, U=U, p=p.1))
+    return(list(dat=varMat, BayesLoss=E.L, U=U, Utte=Utte, p=p.1))
     
   }
   
   
 }
-
 #End 3. -----------------------------------------------------------------------#
 
+
+#Begin 3.1 ---------------------------------------------------------------------#
+#1.dynamic CSF with iBDT
+if(TRUE){
+  iBDT_CSF<-function(
+    levInt=paste(c("Cervical::2L_PD-L1_CPS>1%",  "NSCLC::1L_IIIB/IV_PD-L1>5%",
+           "NSCLC::2L_IIIB/IV_PD-L1>5%", "NSCLC::3L_IIIB/IV_PD-L1>5%",
+           "NSCLC::1Lplatinum_IIIB/IV"),collapse=','), 
+            #set cohort lables to compare, '::' defines levels
+    n1c='40',  #fixed a samples for other parameter change
+    orr0="0.146, 0.22, 0.19, 0.18, 0.137", #ORRs of controls match to lev1
+    delta.r='0.10',  #fixed an improved ORR effect size
+    delta.t='4', #fixed TTE effect size month
+    mt0='2.1, 5.4, 2.8, 2.8, 2.7', #tte values of control or benchmarks
+    cv='0.8', #coefficient variation for tte
+    cutoff='0.4', #decision threshold over ORR or delta ORR
+    nsel="20, 40, 60, 80, 100, 120, 140, 160",#simulate different samples
+    dorr="0.05, 0.1, 0.15, 0.2", #simulate different ORR effect size
+    dtte="1, 2, 3, 4, 5, 6, 7", #simulate different TTE effect size
+    dr1r='0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,0.55,0.60,0.65,0.70', 
+       #simulate decision threshold
+    yellowC="0.25, 0.4", #yellow range for ORR decision thresholds
+    tte.lab='mTTE'
+  ){
+    #set up basic parameters
+    if(TRUE){
+      #levInt<-paste(lev1, collapse = ',')
+      lev1<- unlist(strsplit(levInt, split=',', fixed=T)[[1]])
+      ngrp <- length(lev1)
+      c2n<-function(x, s=NULL){
+        if(is.numeric(x)) return(x)
+        if(is.null(s))
+          x<-as.numeric(unlist(strsplit(as.character(x), split=',')[[1]]))
+        else
+          x<-as.numeric(unlist(strsplit(as.character(x), split=',')[[1]]))[s]
+        return(x)
+      }#covert character to vector
+      n1c<-c2n(n1c,1); orr0<-c2n(orr0); delta.r<-c2n(delta.r,1);
+      delta.t<-c2n(delta.t,1); mt0<-c2n(mt0); cv<-c2n(cv,1); 
+      cutoff<-c2n(cutoff,1); nsel<-c2n(nsel); dorr<-c2n(dorr);
+      dtte<-c2n(dtte); dr1r<-c2n(dr1r); yellowC<-c2n(yellowC,1:2)
+
+      dr_1Int<-paste0(rep('stop::go', len=ngrp), collapse=',')
+      #bmk prevalence internal setup
+      ic_1Int<-paste0(rep(1, len=ngrp), collapse=',') 
+      n1Int  <- paste(rep(n1c, len=ngrp),collapse=',')
+      
+      #set up ORR trt vs ctrl labels
+      orrV<-paste(orr0+delta.r, orr0, sep='vs')
+      orr1Int<-paste(orrV,collapse=', ')
+
+      #set up TTE trt vs ctrl lables      
+      mt1V<-paste(mt0+delta.t, mt0, sep='vs')
+      mt1Int <- paste(mt1V,collapse=', ')
+      sd0 <- mt0*cv #standard deviation of TTE
+      sd1Int <- paste(paste(sd0, sd0, sep='vs'),collapse=',')
+      
+      #decision rule threshold for ORR
+      dr1Int <- paste(rep(cutoff, len=ngrp), collapse=',')
+      poInt  <-c(1,0) #convert utility to success rate
+    }
+    
+    p1<-function(nsel.p1=nsel, ngrp.p=ngrp, dlt.r=delta.r, dlt.t=delta.t,
+                 lev2=levInt, dr_1=dr_1Int, ic_1=ic_1Int, orr1=orr1Int,
+                 mt1=mt1Int, sd1=sd1Int, po=poInt, dr1=dr1Int,
+                 lev1p=lev1, orr0p=orr0, mt0p=mt0 ){ #change n
+      u1<-u2<-r1<-matrix(NA, nrow=ngrp.p, ncol=length(nsel.p1))
+      for(i in 1:length(nsel.p1)){#start looping
+        n1  <- paste(rep(nsel.p1[i], len=ngrp.p),collapse=',')
+        ibdt1<-BDT_UaL.diff( levVars=lev2, dr_lev=dr_1, incidence=ic_1, 
+                             numRsp=orr1, muTTE=mt1,  sdTTE=sd1,  
+                             n_ij=n1, dr_th=dr1, showPlot=F, payoff=po)
+        u1[,i]<-unlist(ibdt1$U)
+        u2[,i]<-unlist(ibdt1$Utte)
+        r1[,i]<-sapply(ibdt1$BayesLoss, function(x){x[2]})
+      }
+      u <- u1*u2
+      colnames(u)<-colnames(r1)<-nsel.p1 #start plotting
+      plot(u[1,]~nsel.p1, ylim=range(u),  type='o', 
+           ylab='integrated P(superior)',  xlab='n',
+           main=paste0('delta_ORR=', 100*dlt.r, '%, delta_TTE=', dlt.t,'mon'))
+      j<-2; while(j>=2 & j<=nrow(u)){
+        points(u[j,]~nsel.p1, type='o', col=j)
+        j<-j+1
+      }
+      col1<-1:nrow(u)
+      legend('bottomright', 
+             legend=paste0(lev1p,'orr_ctrl',orr0p, tte.lab, mt0p), 
+             text.col=col1, bty='n', lty=1, col=col1)
+    }
+    
+    
+    p2<-function(dorr.p2=dorr,n.1=n1c, ngrp.p=ngrp, dlt.r=delta.r, dlt.t=delta.t,
+                 lev2=levInt, dr_1=dr_1Int, ic_1=ic_1Int,  n1=n1Int,
+                 mt1=mt1Int, sd1=sd1Int, po=poInt, dr1=dr1Int, #orr1=orr1Int,
+                 lev1p=lev1, orr0p=orr0, mt0p=mt0){ #change delata
+      u1<-u2<-r1<-matrix(NA, nrow=ngrp.p, ncol=length(dorr.p2))
+      for(i in 1:length(dorr.p2)){#start looping
+        orr1<-paste(paste(orr0p+dorr.p2[i], orr0p, sep='vs'), collapse=', ')
+        ibdt1<-BDT_UaL.diff( levVars=lev2, dr_lev=dr_1, incidence=ic_1, 
+                             numRsp=orr1, muTTE=mt1,  sdTTE=sd1,  n_ij=n1, 
+                             dr_th=dr1, showPlot=F, payoff=po)
+        u1[,i]<-unlist(ibdt1$U)
+        u2[,i]<-unlist(ibdt1$Utte)
+        r1[,i]<-sapply(ibdt1$BayesLoss, function(x){x[2]})
+      }
+      u <- u1*u2
+      colnames(u)<-colnames(r1)<-dorr.p2
+      plot(u[1,]~dorr.p2, ylim=range(u),  type='o', ylab='integrated P(superior)', 
+           xlab='ORR effect size', 
+           main=paste0('n=',n.1,', delta_TTE=', dlt.t, 'mon'))
+      j<-2; while(j>=2 & j<=nrow(u)){
+        points(u[j,]~dorr.p2, type='o', col=j)
+        j<-j+1
+      }
+    }
+    
+    p3<-function(dtte.p3=dtte,n.1=n1c, ngrp.p=ngrp, dlt.r=delta.r, dlt.t=delta.t,
+                 lev2=levInt, dr_1=dr_1Int, ic_1=ic_1Int,  n1=n1Int,
+                 sd1=sd1Int, po=poInt, dr1=dr1Int, orr1=orr1Int, #mt1=mt1Int, 
+                 lev1p=lev1, orr0p=orr0, mt0p=mt0 ){ #change delata TTE
+      u1<-u2<-r1<-matrix(NA, nrow=ngrp.p, ncol=length(dtte.p3))
+      for(i in 1:length(dtte.p3)){#start looping
+        mt1 <- paste(paste(mt0p+dtte.p3[i], mt0p, sep='vs'),collapse=', ')
+        ibdt1<-BDT_UaL.diff( levVars=lev2, dr_lev=dr_1, incidence=ic_1, 
+                             numRsp=orr1, muTTE=mt1,  sdTTE=sd1,  n_ij=n1, 
+                             dr_th=dr1, showPlot=F, payoff=po)
+        u1[,i]<-unlist(ibdt1$U)
+        u2[,i]<-unlist(ibdt1$Utte)
+        r1[,i]<-sapply(ibdt1$BayesLoss, function(x){x[2]})
+      }
+      u <- u1*u2
+      colnames(u)<-colnames(r1)<-dtte.p3
+      plot(u[1,]~dtte.p3, ylim=range(u, na.rm=T),  type='o', 
+           ylab='integrated P(superior)', xlab='TTE effect size', 
+           main=paste0('n=',n.1, ', delta_ORR=,', dlt.r*100, '%'))
+      j<-2; while(j>=2 & j<=nrow(u)){
+        points(u[j,]~dtte.p3, type='o', col=j)
+        j<-j+1
+      }
+    }
+    
+    p4<-function(dr1r.p4=dr1r, n.1=n1c, ngrp.p=ngrp, dlt.r=delta.r, dlt.t=delta.t,
+                 lev2=levInt, dr_1=dr_1Int, ic_1=ic_1Int,  n1=n1Int,
+                 sd1=sd1Int, po=poInt, dr1=dr1Int, orr1=orr1Int, mt1=mt1Int, 
+                 lev1p=lev1, orr0p=orr0, mt0p=mt0,
+                 dc_rg=yellowC){#change CSF with different rate
+      u1<-u2<-r1<-matrix(NA, nrow=ngrp.p, ncol=length(dr1r.p4))
+      for(i in 1:length(dr1r.p4)){#start looping
+        dr1 <- paste(rep(dr1r.p4[i], ngrp.p), collapse=',')
+        ibdt1<-BDT_UaL.diff( levVars=lev2, dr_lev=dr_1, incidence=ic_1, 
+                             numRsp=orr1, muTTE=mt1,  sdTTE=sd1,  n_ij=n1, 
+                             dr_th=dr1, showPlot=F, payoff=po)
+        u1[,i]<-unlist(ibdt1$U)
+        u2[,i]<-unlist(ibdt1$Utte)
+        r1[,i]<-sapply(ibdt1$BayesLoss, function(x){x[2]})
+      }
+      u <- u1*u2
+      colnames(u)<-colnames(r1)<-dr1r.p4
+      plot(0~min(dr1r.p4), ylim=range(r1),  type='o', ylab='risk if go', 
+           col='white', xlim=range(dr1r.p4), xlab='ORR decision threshold', 
+           main=paste0('n=',n.1,', delta_ORR=', dlt.r*100, 
+                       '%, delta_TTE=', dlt.t, 'mon'))
+      polygon(x=c(min(dr1r.p4), dc_rg[1], dc_rg[1], min(dr1r.p4)), 
+              y=rep(range(r1), each=2), col='red', border='red')
+      polygon(x=c(dc_rg[1], dc_rg[2], dc_rg[2], dc_rg[1]), 
+              y=rep(range(r1), each=2), col='yellow', border='yellow')
+      polygon(x=c(dc_rg[2], max(dr1r.p4), max(dr1r.p4), dc_rg[2]),
+              y=rep(range(r1), each=2), col='green', border='green')
+      j<-1; while(j>=1 & j<=nrow(u)){
+        points(r1[j,]~dr1r.p4, type='o', col=j)
+        j<-j+1
+      }
+      col1<-1:nrow(u)
+    }
+
+    p5<-function( n.1=n1c, ngrp.p=ngrp, dlt.r=delta.r, dlt.t=delta.t,
+                 lev2=levInt, dr_1=dr_1Int, ic_1=ic_1Int,  n1=n1Int,
+                 sd1=sd1Int, po=poInt, dr1=dr1Int, orr1=orr1Int, mt1=mt1Int, 
+                 lev1p=lev1, orr0p=orr0, mt0p=mt0,
+                 dc_rg=yellowC){#change CSF with different rate
+      dr1r.p5<-1:n.1
+      pp1<-matrix(NA, nrow=ngrp.p, ncol=length(dr1r.p5))
+      th1<-matrix(NA, nrow=ngrp.p, ncol=2); colnames(th1)<-c('Low','High')
+      for(i in 1:ngrp.p){#start looping
+        for(j in dr1r.p5){# number of responders 
+          csf=orr0p[i]+dlt.r 
+          shape1=0.5; shape2=0.5;
+          newshape1=shape1+j
+          newshape2=shape2+(n.1-j)
+          pp1[i,j]<-1-pbeta(csf, newshape1, newshape2) 
+          if(pp1[i,j]<=min(dc_rg)) th1[i,1]<-j
+          if(pp1[i,j]<=max(dc_rg)) th1[i,2]<-j
+        }
+      }
+      colnames(pp1)<-dr1r.p5
+      plot(0~min(dr1r.p5), ylim=range(pp1),  type='o', ylab='P(orr>CSF)', 
+           col='white', xlim=range(dr1r.p5), xlab='Number of responders', 
+           main=paste0('n=',n.1,', delta_ORR=', dlt.r*100, '%'))
+      abline(h=dc_rg, col=c('red','green'))
+      # xx.poly <- rep(range(dr1r.p5), each=2)
+      # polygon(y=c(0, dc_rg[1], dc_rg[1], 0), 
+      #         x=xx.poly, col='red', border='red')
+      # polygon(y=c(dc_rg[1], dc_rg[2], dc_rg[2], dc_rg[1]), 
+      #         x=xx.poly, col='yellow', border='yellow')
+      # polygon(y=c(dc_rg[2], 1, 1, dc_rg[2]),
+      #         x=xx.poly, col='green', border='green')
+      j<-1; while(j>=1 & j<=nrow(pp1)){
+        points(pp1[j,]~dr1r.p5, type='o', col=j)
+        j<-j+1
+      }
+      col1<-1:nrow(pp1)
+      leg1<-paste0('[',th1[,'Low'], ', ', th1[,'High'], ']')
+      legend('right', legend=leg1, 
+      			 text.col=col1, bty='n', col=col1)
+    }
+    
+    par(mfrow=c(2,2))
+    p5(); p1(); p2(); p3(); 
+  }
+  if(F){#BEACH code
+    input <- input0
+    input<-NULL
+    
+    input$text<-"Cervical::2L_PD-L1_CPS>1%,NSCLC::1L_IIIB/IV_PD-L1>5%,NSCLC::2L_IIIB/IV_PD-L1>5%,NSCLC::3L_IIIB/IV_PD-L1>5%,NSCLC::1Lplatinum_IIIB/IV"
+    
+    input$text2<-'40'
+    input$text3<-"0.146, 0.22, 0.19, 0.18, 0.137"
+    input$text4<-'0.10'
+    input$text5<-'4'
+    input$text6<-'2.1, 5.4, 2.8, 2.8, 2.7'
+    input$text7<-'0.8'
+    input$text8<-'0.4'
+    input$text9<-"20, 40, 60, 80, 100, 120, 140, 160"
+    input$text10<-"0.05, 0.1, 0.15, 0.2"
+    input$text11<-"1, 2, 3, 4, 5, 6, 7"
+    input$text12<-'0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,0.55,0.60,0.65,0.70'
+    input$text13<-"0.25, 0.4"
+    input$text14<-'mOS'
+    
+    iBDT_CSF(
+      levInt=input$text, #set cohort lables to compare, '::' defines levels
+      n1c=input$text2,  #fixed a samples for other parameter change
+      orr0=input$text3, #ORRs of controls match to lev1
+      delta.r=input$text4,  #fixed an improved ORR effect size
+      delta.t=input$text5, #fixed TTE effect size month
+      mt0=input$text6, #tte values of control or benchmarks
+      cv=input$text7, #coefficient variation for tte
+      cutoff=input$text8, #decision threshold over ORR or delta ORR
+      nsel=input$text9,#simulate different samples
+      dorr=input$text10, #simulate different ORR effect size
+      dtte=input$text11, #simulate different TTE effect size
+      dr1r=input$text12, #simulate decision threshold
+      yellowC=input$text13, #yellow range for ORR decision thresholds
+      tte.lab=input$text14
+    )
+    
+    if(F){
+      csf=0.4 
+      shape1=0.5
+      shape2=0.5
+      r=19  # number of responders 
+      n=40 # number of treated patients
+      newshape1=shape1+r
+      newshape2=shape2+(n-r)
+      1-pbeta(csf, newshape1, newshape2) #posterior prob (RR>CSF)<0.2, then stop; if >0.8 then accelerate.
+    }
+  }
+}
+#End 3.1 -----------------------------------------------------------------------#
+
+
+
+#Begin 4. ---------------------------------------------------------------------#
+#power analysis
+if(TRUE){
+  #X ~ w*N(muA, sgmS) + (1-w)*N(muB, sgmS)
+  #mu = w*muA + (1-w)*muB where muA>=muB
+  #sgmS = sqrt(sgm^2 - ee)
+  #ee = w*muA^2 + (1-w)*muB^2 - mu^2
+  #theta = muA - muB
+  BEACH_PowerPlot<<-function(
+    n.rg='10~200',
+    n.vl=20, #a fixed vertical line in power vs n plot
+    theta.rg='0~200',
+    theta.vl=50, #a fixed vertical line in power vs theat
+    sgm.rg='10~200', 
+    sgm.vl=100, #a fixed vertical line in power vs observed standardization
+    muA=15, #a default assumption of the lower group mean
+    prev='0.15~0.65', #prevalence rate for group A
+    alpha=0.05,  #significance level
+    simSize=100, #simulation size
+    m1=1,           #number of group pairs
+    r1=ifelse(as.numeric(m1)<2,  NA,
+             paste(rep(1,round(as.numeric(m1))-1),collapse=',') )
+             #proportions in the groups with higher means
+  ){
+    require(pwr)
+    xx2<-function(rg1, ss=simSize){
+      return(seq(rg1[1], rg1[2], len=ss))
+    }
+    add1<-function(xL='sample size', LL, v1=n.vl, v1c='n', 
+                   LG1=NULL, LG1.pos='topright', 
+                   LG2=NULL, LG2.pos='bottomright'){
+      plot(y~x, data=LL[[1]], ylab='power', xlab=xL, type='l', lty=2,
+           ylim=c(0,1), xlim=range(LL[[1]]$x))
+      if(length(LL)>1){
+       for(i in 2:length(LL)) lines(y~x, data=LL[[i]], lty=i+1)
+      }
+      abline(v=v1, col='red')
+      mtext(text=paste0(v1c,'=', v1), at=v1, col='red')
+      if(!is.null(LG1)){
+        legend(LG1.pos,legend=LG1, text.col='red', bty='n')
+      }
+      if(!is.null(LG2)){
+        legend(LG2.pos,legend=LG2, bty='n')
+      }
+    }
+    #convert number of group paris into integer
+    m1<-round(as.numeric(m1))
+    #get the sample size ratios of other group to group a
+    r1<-as.numeric(strsplit(r1, split=',', fixed=T)[[1]])
+    if(!is.na(r1)){
+      l_r1 <- m1 - length(r1)
+      if(l_r1>0){
+        r1<-c(r1, rep(1, l_r1)) #set default ratio as 1 if missing
+      }
+      r1<-r1[1:m1]
+      r1<-r1/sum(r1)
+      alpha<-round(1-(1-alpha)^(1/m1),3)#set type I error for each test
+    }
+    
+    n.rg<-spF(n.rg); #set total sample size range
+    theta.rg<-spF(theta.rg); #set effect size range
+    sgm.rg<-spF(sgm.rg); #set standard deviation range
+    prev<-spF(prev, s='~|,', noClean=TRUE); 
+    prev<-prev[prev>0&prev<1];#set the prevalences of the lowest group mean
+    if(alpha>1|alpha<0){alpha<-0.05}; #set default significance level
+    
+    cv.vl<-sgm.vl/theta.vl; #set coefficient variation selected value
+    cv.rg<-c(min(cv.vl,0.01), max(cv.vl+1, 2)); #set range for cv
+    d1t<-abs(theta.vl)/sgm.vl; #set the selected effect size
+    
+    #get the point value
+    y1<-nA1<-nB1<-NULL; #note B1 could have >1 values if m>1
+    for(i in 1:length(prev)){
+      nA1t<-round(n.vl*prev[i]); nB1t<-n.vl-nA1t
+      if(is.na(r1)){
+        y1t<-pwr.t2n.test(n1=nA1t, n2=nB1t, d=d1t, sig.level=alpha)$power
+      }else{
+        nB1t1<- round(nB1t*r1)
+        nB1t1<-nB1t1[nB1t1>1]
+        y1t <- pwr.t2n.test(n1=nA1t, n2=nB1t1, d=d1t, sig.level=alpha)$power
+        y1t <- 1-prod(1-y1t)
+      }
+      y1<-c(y1, y1t)
+      nA1<-c(nA1, nA1t)
+      nB1<-c(nB1, nB1t) 
+    }
+    leg1<-paste0(paste0('rA=',prev), paste0(', pwr=',round(y1,2)))
+    leg1<-leg1[order(y1, decreasing=T)]
+    
+    par(mfrow=c(2,2))
+    #power vs n
+    x<-round(xx2(n.rg, ss=simSize)); pnL<-list(); 
+    for(i in 1:length(prev)){
+      nAs<-pmax(2, round(x*prev[i])); nBs<-pmax(2, x-nAs); 
+      if(is.na(r1)){
+        y<-pwr.t2n.test(n1=nAs, n2=nBs, d=d1t, sig.level=alpha)$power
+      }else{
+        yt<-rep(1, length(x))
+        for(r_m in 1:length(r1)){
+          nBs1<-round(r1[r_m]*nBs)
+          s0<-nBs1>1
+          if(all(!s0)){next}
+          yt[s0]<-yt[s0]*(1-pwr.t2n.test(n1=nAs[s0], n2=nBs1[s0], d=d1t, 
+                         sig.level=alpha)$power)
+        }
+        y<-1-yt
+      }
+      pnL[[i]]<-data.frame(x=x, y=y)
+    }
+    leg2<-paste0('meanA=',muA, ', diff=',theta.vl,
+                 ', sd=', sgm.vl, ', sig.level=', alpha)
+    add1(xL='sample size', LL=pnL, v1=n.vl, v1c='n', LG1=leg1,LG2=leg2)
+    
+    ##power vs cv
+    x<-xx2(cv.rg, ss=simSize); pcL<-list(); 
+    for(i in 1:length(prev)){
+      if(is.na(r1)){
+        y<-pwr.t2n.test(n1=nA1[i], n2=nB1[i], d=1/x, sig.level=alpha)$power
+      }else{
+        yt<-rep(1, length(x))
+        for(r_m in 1:length(r1)){
+          nBs1<-round(r1[r_m]*nB1[i])
+          if(nBs1<2) next
+          yt<-yt*(1-pwr.t2n.test(n1=nA1[i], n2=nBs1, d=1/x, sig.level=alpha)$power)
+        }
+        y<-1-yt
+      }
+      pcL[[i]]<-data.frame(x=x, y=y)
+    }
+    leg2<-paste0('meanA=',muA, ', n=',n.vl, ', sig.level=', alpha)
+    add1(xL='coefficient of variation (sd/mean)', LL=pcL, v1=round(cv.vl,2), 
+         v1c='cv', LG2=leg2, LG2.pos='topright')
+    
+    #power vs sd
+    x<-xx2(sgm.rg, ss=simSize); psL<-list(); 
+    muB<-muA+theta.vl
+    for(i in 1:length(prev)){
+      mmt<-prev[i]*muA^2+(1-prev[i])*muB^2-(prev[i]*muA+(1-prev[i])*muB)^2
+      xS<-sqrt(x^2-mmt)
+      if(is.na(r1)){
+        y<-pwr.t2n.test(n1=nA1[i], n2=nB1[i], 
+                      d=abs(theta.vl)/xS, sig.level=alpha)$power
+      }else{
+        yt<-rep(1, length(x))
+        for(r_m in 1:length(r1)){
+          nBs1<-round(r1[r_m]*nB1[i])
+          if(nBs1<2) next
+          yt<-yt*(1-pwr.t2n.test(n1=nA1[i], n2=nBs1, 
+                                 d=abs(theta.vl)/xS, sig.level=alpha)$power)
+        }
+        y<-1-yt
+      }
+      psL[[i]]<-data.frame(x=x, y=y)
+    }
+    leg2<-paste0('meanA=',muA, ', diff=',theta.vl,
+                 ', n=', n.vl, ', sig.level=', alpha)
+    add1(xL='total standard deviation', LL=psL, v1=sgm.vl, v1c='sd', LG2=leg2, 
+         LG2.pos='topright')
+
+    #power vs diff
+    x<-xx2(theta.rg, ss=simSize); pdL<-list(); 
+    for(i in 1:length(prev)){
+      if(is.na(r1)){
+        y<-pwr.t2n.test(n1=nA1[i], n2=nB1[i], 
+                      d=abs(x)/sgm.vl, sig.level=alpha)$power
+      }else{
+        yt<-rep(1, length(x))
+        for(r_m in 1:length(r1)){
+          nBs1<-round(r1[r_m]*nB1[i])
+          if(nBs1<2) next
+          yt<-yt*(1-pwr.t2n.test(n1=nA1[i], n2=nBs1, 
+                                 d=abs(x)/sgm.vl, sig.level=alpha)$power)
+        }
+        y<-1-yt
+      }
+      pdL[[i]]<-data.frame(x=x, y=y)
+    }
+    leg2<-paste0('meanA=',muA, ', sd=',sgm.vl,
+                 ', n=', n.vl, ', sig.level=', alpha)
+    add1(xL='absolute difference', LL=pdL, v1=theta.vl, 
+         v1c='meanB - meanA', LG2=leg2)
+    
+    #density plot
+    if(F){
+      dsL<-list(); mu.rg<-c(muA-3*sgm.vl, muA+theta.vl+3*sgm.vl);
+      x<-xx2(mu.rg); yrg<-NULL;
+      muB<-muA+theta.vl; 
+      sgmS<-NULL
+      for(i in 1:length(prev)){
+        mmt<-prev[i]*muA^2+(1-prev[i])*muB^2-(prev[i]*muA+(1-prev[i])*muB)^2
+        sgmSt<-sqrt(sgm.vl^2-mmt)
+        ya<-prev[i]*dnorm(x, mean=muA, sd=sgmSt)
+        yb<-(1-prev[i])*dnorm(x, mean=muB, sd=sgmSt)
+        sgmS<-c(sgmS, sgmSt)
+        dsL[[i]]<-data.frame(x=x, ya=ya, yb=yb)
+        yrg<-range(c(yrg, range(ya), range(yb)))
+      }
+      yrg<-c(0,max(yrg))
+      plot(0~0, ylim=yrg, xlim=range(x), col='white', ylab='density', 
+           xlab='means')
+      for(i in 1:length(dsL)){
+        lines(ya~x, data=dsL[[i]], lty=i+1, col='blue')
+        lines(yb~x, data=dsL[[i]], lty=i+1, col='magenta')
+      }
+      abline(v=c(muA,muB), col=c('blue', 'magenta'))
+      mtext(at=(muA+muB)/2, text=paste0('muB-muA=',theta.vl))
+      #legend("topleft",legend=leg1, lty=(1:length(prev))+1, bty='n')
+    }
+  }
+  #setup parameters
+  spF<<-function(x, s="~", ss=simSize, noClean=FALSE){
+    if(is.null(x)){
+      rg1<-NULL
+    }else if(all(grepl(s, x))){
+      x<-as.numeric(strsplit(x, split=s)[[1]])
+      rg1<-x[!is.na(x)]
+    }else{rg1<-as.numeric(x)}
+    if(noClean){return(rg1)}
+    if(is.null(rg1)||length(rg1)==0){rg1<-c(0, ss)}#defult setup
+    if(length(rg1)==1){rg1<-c(rg1, rg1+ss)}else{rg1<-rg1[1:2]}
+    return(rg1)
+  }
+  
+}
+#End 4. -----------------------------------------------------------------------#
 
 
 
