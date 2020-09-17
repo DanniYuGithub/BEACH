@@ -74,13 +74,7 @@ if(TRUE){
   if(T && "sas7bdat.parso" %in% installed.packages() ){
     library(sas7bdat.parso)
   }
-  
-  #For Lilly internal use only
-  if(F){
-    library(sas7bdat.parso, lib.loc='libs/')
-  }
-  
-  
+    
   #library(WriteXLS)
   library(readxl)
   #library(SASxport)
