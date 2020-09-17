@@ -176,31 +176,31 @@ if(TRUE){
     dose=c(20, 100),             #numeric values of dose levels, required input
     #parameters
     prior_ti=c(0.1, 0.2,  0.2, 0.3, 0.05, 0.15),#PrioInfo Tumor Incidence: 
-                                 #length is length(blBMK)*length(tumorType)
-                                 #values obtained from prior knowledge
+    #length is length(blBMK)*length(tumorType)
+    #values obtained from prior knowledge
     prior_prop=c(0.1, 0.9),      #proportion of patients in the subgroup of dose 
-                                 #and bmk length is either length(dose) or
-                                 #length(dose)*length(blBMK)*length(tumorType)
-                                 #values obtained from prior knowledge
+    #and bmk length is either length(dose) or
+    #length(dose)*length(blBMK)*length(tumorType)
+    #values obtained from prior knowledge
     prob_stop0 = c(0.75, 0.05),  #Prob(not stop|dose) matching to the levels in 
-                                 #dose length is length(dose), the 
-                                 #proportions obtained from early phase trials
+    #dose length is length(dose), the 
+    #proportions obtained from early phase trials
     prob_BR1   = c(0.1, 0.75),   #Prob(BioResp=1|stop=0, dose, tumor, bmk), 
-                                 #length is either length(dose) or 
-                                 #length(dose)*length(blBMK)*length(tumorType)
-                                 #values obtained from early phase trials  
+    #length is either length(dose) or 
+    #length(dose)*length(blBMK)*length(tumorType)
+    #values obtained from early phase trials  
     prob_CB1_BR = c(0.8, 0.1),   #Prob(ClinBenefit=1|BioResp=1) and 
-                                 #Prob(CB=1|BR=0). The lengh is either 2, or
-                                 #2*length(dose)*length(blBMK)*length(tumorType)
+    #Prob(CB=1|BR=0). The lengh is either 2, or
+    #2*length(dose)*length(blBMK)*length(tumorType)
     showTree   = TRUE,           #if FASLE only return the tree table
     showProb   = TRUE,           #if TRUE show the probablities on the tree and 
-                                 #return the probability table
+    #return the probability table
     showBar    = TRUE,           #show the barplot of expected U(dose|{T,B})
     #other args for plotting
     th.arrow        = 0.8,       #horizontal space between an arrow and target
     th.utDB    = 1,              #vertical space between dose sign and utility
     topRatio   = 0.2,            #the top ratio of joint p-values (or utilities) 
-                                 #that need to be colored
+    #that need to be colored
     topCol     = 'red',          #the color for the top joint p-values  
     payoff     = c(100, -100)    #payoff value for CB=1 and CB=0
   ){
@@ -222,7 +222,7 @@ if(TRUE){
     #cleanup the top ratio
     if(is.null(topRatio)) topRatio <- 0.2
     topRatio <- trunc01( as.numeric(topRatio) )
-  
+    
     #cleanup the input
     if(length(blBMK)==1){
       blBMK<-strsplit(as.character(blBMK), split=',', fixed=T)[[1]]
@@ -278,7 +278,7 @@ if(TRUE){
       BioResp   <- rep(rep(c('yes', 'no'), each=numL.ClinBenif),
                        times=numL.stop*numL.dose*numL.tumorType*numL.blBMK)
       stop0       <- rep(rep(c('yes', 'no'), each=numL.ClinBenif*numL.BioResp),
-                       times=numL.dose*numL.tumorType*numL.blBMK)
+                         times=numL.dose*numL.tumorType*numL.blBMK)
       dose.in   <- rep(rep(dose, each=numL.ClinBenif*numL.BioResp*numL.stop),
                        times=numL.tumorType*numL.blBMK)
       BMK.in    <- rep(rep(blBMK, each=numL.ClinBenif*numL.BioResp*numL.stop*numL.dose), 
@@ -291,8 +291,8 @@ if(TRUE){
         stop('Error in level definition: check input value for blBMK, tumorType, dose')
       }
       mat <- cbind(tumorType=tumor.in, blBMK=BMK.in, 
-                        dose=dose.in, stop0=stop0, 
-                        BioResp=BioResp, ClinBenif=ClinBenif)
+                   dose=dose.in, stop0=stop0, 
+                   BioResp=BioResp, ClinBenif=ClinBenif)
       fun1<-function(x, lastCol=NULL){
         if(length(x)<=1) return(x)
         sel <- c(FALSE, x[2:length(x)]==x[1:(length(x)-1)])
@@ -308,7 +308,7 @@ if(TRUE){
       }
       dimnames(m11) <- dimnames(mat.tab)
       mat.tab <- m11
-  
+      
       if(is.matrix(mat.tab)) {
         mat.tab[which(mat.tab[,'dose']!=''), 'stop0'] <- 'no'
       }
@@ -342,11 +342,11 @@ if(TRUE){
         lty1 <- 1;  lwd1 <- 1; col1='gray80';
         if (i>=4) {col1 <- 'black'}
         if (i==5) {lty1<-4; }
-  
+        
         if(i <= 3){
           pnt <- rbind(pnt, 
-              data.frame(x=rep(i, length(y.tt)), 
-                   y=y.tt, pch=22, cex=3) )
+                       data.frame(x=rep(i, length(y.tt)), 
+                                  y=y.tt, pch=22, cex=3) )
           
           arr <- rbind(arr, 
                        data.frame(x0=rep(i-1, length(y.tt))+th*0.8, 
@@ -391,19 +391,19 @@ if(TRUE){
             text(x=i+dum2-th.p, y=which(mat.tab[,i]!=''), labels=prior_ti, cex=text.size1, col='gray')
             print(prior_ti)
             j.prob <- j.prob * rep(prior_ti, each=num.mat.L/length(prior_ti))
-             print(j.prob)
+            print(j.prob)
           }else if(i==3){
             if(length(prior_prop)==length(dose)) 
               prior_prop <- rep(prior_prop, numL.blBMK*numL.tumorType)
             text(x=i+dum2-th.p, y=which(mat.tab[,i]!=''), labels=prior_prop, cex=text.size1, col='gray')
             j.prob <- j.prob * rep(prior_prop, each=num.mat.L/length(prior_prop))
-             print(j.prob)
+            print(j.prob)
           }else if (i==4){
             if(length(prob_stop0)==length(dose))
-               prob_stop0 <- rep(prob_stop0, numL.blBMK*numL.tumorType) 
+              prob_stop0 <- rep(prob_stop0, numL.blBMK*numL.tumorType) 
             text(x=i+dum2-th.p, y=which(mat.tab[,i]!=''), labels=prob_stop0, cex=text.size1, col='gray')
             j.prob <- j.prob * rep(prob_stop0, each=num.mat.L/length(prob_stop0))
-             print(j.prob)
+            print(j.prob)
           }else if (i==5){
             if(length(prob_BR1)==numL.dose && numL.dose<numL.blBMK*numL.tumorType)
               prob_BR1 <- rep(prob_BR1, numL.blBMK*numL.tumorType)
@@ -411,7 +411,7 @@ if(TRUE){
             #the prob are Pr(br=1|...), Pr(br=0|...), Pr(br=1|...), Pr(br=0|...), etc.
             prob_BR <- as.vector(rbind(prob_BR1, 1-prob_BR1))
             j.prob <- j.prob * prob_BR
-             print(j.prob)
+            print(j.prob)
           }else if (i==6){
             if(length(prob_CB1_BR)==2)
               prob_CB1_BR <- rep(prob_CB1_BR, numL.blBMK*numL.tumorType)
@@ -424,7 +424,7 @@ if(TRUE){
             #Pr(CB=1,BR=1|...), Pr(CB=1,BR=0|...),Pr(CB=1,BR=1|...), Pr(CB=1,BR=0|...), etc.
             j.prob <- round(payoff[1]*j.prob * prob_CB1_BR, 3)
             
-  
+            
             
             #color the top 10%
             num.col <- round(length(j.prob)*topRatio)
@@ -447,7 +447,7 @@ if(TRUE){
             print(prob_CB1_BR)
             print(j.prob)
             print(mat.tab)
-  
+            
             mat.tab[mat.tab[, i]=='yes', 'U']<-j.prob
             mat.tab[mat.tab[, i]=='yes', 'U0']<-j.prob0
             mat.tab[mat.tab[, i]=='yes', 'topColor']<-col.p
@@ -537,7 +537,7 @@ if(TRUE){
         
         
       }
-  
+      
     }
     
     
@@ -574,7 +574,7 @@ if(TRUE){
     th,             #the vector of thresholds (delta) of decision rule
     n,              #the number of patients in a cohort
     p_pos,          #the posterior probability of responding to drug
-                    #is the value update by data and affect decsion loss
+    #is the value update by data and affect decsion loss
     d.fun=pbinom    #probability function (lower.tail=T)
   ){
     #defin the distribution as binomial
@@ -627,29 +627,29 @@ if(TRUE){
   #fixing the expected utility and make loss function flexible
   BDT_UaL <- function(
     levVars="B1::T1::coh1::BR1,B1::T1::coh2::BR1,B1::T2::coh3::BR2",       
-                                  #variables and levels separated by "::"
+    #variables and levels separated by "::"
     dr_lev="nogo::go,nogo::go,nogo::go",  #order does matter.
-                                  #decision rule labels
+    #decision rule labels
     incidence="0.3,0.3,0.1",      #Biomarker incidence in the tumor type 
-                                  #values obtained from prior knowledge
+    #values obtained from prior knowledge
     pBprior=NULL,                 #the hyper parameters "alph, beta"
-                                  #if NULL, then alpha=1+incidence
-                                  #beta=2-incidence
-                                  #if not NULL, the value should be like
-                                  #"1.3 1.7,1.3 1.7, 1.1 1.9," 
+    #if NULL, then alpha=1+incidence
+    #beta=2-incidence
+    #if not NULL, the value should be like
+    #"1.3 1.7,1.3 1.7, 1.1 1.9," 
     n_ij="10, 10, 10",            #sample sizes for each cohort
-                                  #values obtained from decision makers
+    #values obtained from decision makers
     dr_th="0.1,0.5,0.6",          #decision rule threshold (delta)
-                                  #if 3 levels of decision rule such as 
-                                  #dr_lev="go::moreData::nogo," then
-                                  #dr_th="0.9::0.3,"
+    #if 3 levels of decision rule such as 
+    #dr_lev="go::moreData::nogo," then
+    #dr_th="0.9::0.3,"
     drFunc=my.eLoss,              #user-defined Bayes decision loss function
-                                  #input: [th, n, p_pos]
-                                  #output: a vector of Bayes decision loss
+    #input: [th, n, p_pos]
+    #output: a vector of Bayes decision loss
     showBar=TRUE,                 #show the barplot of utility & loss
     th.arrow= 0.8,                #horizontal space between an arrow and target
     payoff= c(10, -1)            #payoff value for utility, only two values
-                                 #gain vs lost
+    #gain vs lost
   ){
     #an internal function truncates values to 0, 1
     trunc01 <- function(val){
@@ -727,7 +727,7 @@ if(TRUE){
     if(TRUE){
       
       if(is.null(levVars)) return(NULL)
-
+      
       LV0 <- LV <- my.split1(levVars)
       num.var <- length(LV[[1]])
       drLV  <- my.split1(dr_lev)
@@ -854,7 +854,7 @@ if(TRUE){
               lwd=8, 
               col=col.bar1)
       }
-
+      
       l.x0<-rep(tot.col2+shf, nrow(varMat))
       l.y0<-1:nrow(varMat)
       l.x1<-l.x0-unlist(E.L)
@@ -975,7 +975,7 @@ if(TRUE){
        length(sample1)!=length(sample1.prob)){
       stop('Sample1 input is wrong for eLoss.diff')
     }else if(!is.vector(sample2) | !is.vector(sample2.prob) |
-       length(sample2)!=length(sample2.prob)){
+             length(sample2)!=length(sample2.prob)){
       stop('Sample2 input is wrong for eLoss.diff')
     }else{
       n.r <- length(sample1)
@@ -1212,9 +1212,9 @@ if(TRUE){
               }
               sam.trt <- sam.ctr <- 0:n_1.trt[o]
               sam.trt.prob<-dbinom(sam.trt, size=n_1.trt[o], 
-                              prob=p.0[[o]][1]/sum(p.0[[o]]) )
+                                   prob=p.0[[o]][1]/sum(p.0[[o]]) )
               sam.ctr.prob<-dbinom(sam.ctr, size=n_1.ctr[o], 
-                              prob=prob.ctr )
+                                   prob=prob.ctr )
               
               RT.diff[[o]] <- list()
               RT.diff[[o]]$sample1 <- sam.trt
@@ -1268,13 +1268,13 @@ if(TRUE){
            all(sapply(tte.mu, length)==2) & 
            all(sapply(tte.sd, length)==2) &
            length(tte.mu)==length(incd)
-           ){
+        ){
           for(o in 1:length(incd)){
-           cy.trt <- rlnorm2(B=Bsample, m=tte.mu[[o]][1], s=tte.sd[[o]][1])
-           cy.ctr <- rlnorm2(B=Bsample, m=tte.mu[[o]][2], s=tte.sd[[o]][2])
-           tte.diff[[o]] <- cy.trt-cy.ctr
-           tte.diff[[o]] <- tte.diff[[o]][is.finite(tte.diff[[o]]) & 
-                                            !is.na(tte.diff[[o]])]
+            cy.trt <- rlnorm2(B=Bsample, m=tte.mu[[o]][1], s=tte.sd[[o]][1])
+            cy.ctr <- rlnorm2(B=Bsample, m=tte.mu[[o]][2], s=tte.sd[[o]][2])
+            tte.diff[[o]] <- cy.trt-cy.ctr
+            tte.diff[[o]] <- tte.diff[[o]][is.finite(tte.diff[[o]]) & 
+                                             !is.na(tte.diff[[o]])]
           }
           useTteDiff<-TRUE
         }
@@ -1326,10 +1326,10 @@ if(TRUE){
           print(th2); print(paste("length(RT.diff[[o]])", length(RT.diff[[o]])));
           
           eL <- eLoss.diff(th=th2, 
-                         sample1=RT.diff[[o]]$sample1,
-                         sample2=RT.diff[[o]]$sample2,
-                         sample1.prob=RT.diff[[o]]$sample1.prob,
-                         sample2.prob=RT.diff[[o]]$sample2.prob)
+                           sample1=RT.diff[[o]]$sample1,
+                           sample2=RT.diff[[o]]$sample2,
+                           sample1.prob=RT.diff[[o]]$sample1.prob,
+                           sample2.prob=RT.diff[[o]]$sample2.prob)
           #normalize the loss
           eL$e_loss <- eL$e_loss/sum(eL$e_loss)
           #probability of the difference pi_trt-pi_ctr>0
@@ -1471,7 +1471,7 @@ if(TRUE){
     
     #add barplot of utility and loss
     if(showBar&showPlot){
-#      bar.wid <- 8
+      #      bar.wid <- 8
       u.x0<-rep(0, length(LV))
       u.y0<-which(varMat[,ncol(varMat)-1]!='')
       u.x1<-unlist(U)
@@ -1524,9 +1524,9 @@ if(TRUE){
 if(TRUE){
   iBDT_CSF<-function(
     levInt=paste(c("Cervical::2L_PD-L1_CPS>1%",  "NSCLC::1L_IIIB/IV_PD-L1>5%",
-           "NSCLC::2L_IIIB/IV_PD-L1>5%", "NSCLC::3L_IIIB/IV_PD-L1>5%",
-           "NSCLC::1Lplatinum_IIIB/IV"),collapse=','), 
-            #set cohort lables to compare, '::' defines levels
+                   "NSCLC::2L_IIIB/IV_PD-L1>5%", "NSCLC::3L_IIIB/IV_PD-L1>5%",
+                   "NSCLC::1Lplatinum_IIIB/IV"),collapse=','), 
+    #set cohort lables to compare, '::' defines levels
     n1c='40',  #fixed a samples for other parameter change
     orr0="0.146, 0.22, 0.19, 0.18, 0.137", #ORRs of controls match to lev1
     delta.r='0.10',  #fixed an improved ORR effect size
@@ -1538,9 +1538,8 @@ if(TRUE){
     dorr="0.05, 0.1, 0.15, 0.2", #simulate different ORR effect size
     dtte="1, 2, 3, 4, 5, 6, 7", #simulate different TTE effect size
     dr1r='0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,0.55,0.60,0.65,0.70', 
-       #simulate decision threshold
-    yellowC="0.25, 0.4", #yellow range for ORR decision thresholds
-    tte.lab='mTTE'
+    #simulate decision threshold
+    yellowC="0.25, 0.4" #yellow range for ORR decision thresholds
   ){
     #set up basic parameters
     if(TRUE){
@@ -1559,7 +1558,7 @@ if(TRUE){
       delta.t<-c2n(delta.t,1); mt0<-c2n(mt0); cv<-c2n(cv,1); 
       cutoff<-c2n(cutoff,1); nsel<-c2n(nsel); dorr<-c2n(dorr);
       dtte<-c2n(dtte); dr1r<-c2n(dr1r); yellowC<-c2n(yellowC,1:2)
-
+      
       dr_1Int<-paste0(rep('stop::go', len=ngrp), collapse=',')
       #bmk prevalence internal setup
       ic_1Int<-paste0(rep(1, len=ngrp), collapse=',') 
@@ -1568,7 +1567,7 @@ if(TRUE){
       #set up ORR trt vs ctrl labels
       orrV<-paste(orr0+delta.r, orr0, sep='vs')
       orr1Int<-paste(orrV,collapse=', ')
-
+      
       #set up TTE trt vs ctrl lables      
       mt1V<-paste(mt0+delta.t, mt0, sep='vs')
       mt1Int <- paste(mt1V,collapse=', ')
@@ -1597,7 +1596,7 @@ if(TRUE){
       u <- u1*u2
       colnames(u)<-colnames(r1)<-nsel.p1 #start plotting
       plot(u[1,]~nsel.p1, ylim=range(u),  type='o', 
-           ylab='integrated P(superior)',  xlab='n',
+           ylab='iBDT P(superior)',  xlab='n',
            main=paste0('delta_ORR=', 100*dlt.r, '%, delta_TTE=', dlt.t,'mon'))
       j<-2; while(j>=2 & j<=nrow(u)){
         points(u[j,]~nsel.p1, type='o', col=j)
@@ -1605,7 +1604,7 @@ if(TRUE){
       }
       col1<-1:nrow(u)
       legend('bottomright', 
-             legend=paste0(lev1p,'orr_ctrl',orr0p, tte.lab, mt0p), 
+             legend=paste0(lev1p,'orr_ctrl',orr0p, ' mPFS', mt0p), 
              text.col=col1, bty='n', lty=1, col=col1)
     }
     
@@ -1626,7 +1625,7 @@ if(TRUE){
       }
       u <- u1*u2
       colnames(u)<-colnames(r1)<-dorr.p2
-      plot(u[1,]~dorr.p2, ylim=range(u),  type='o', ylab='integrated P(superior)', 
+      plot(u[1,]~dorr.p2, ylim=range(u),  type='o', ylab='iBDT P(superior)', 
            xlab='ORR effect size', 
            main=paste0('n=',n.1,', delta_TTE=', dlt.t, 'mon'))
       j<-2; while(j>=2 & j<=nrow(u)){
@@ -1652,7 +1651,7 @@ if(TRUE){
       u <- u1*u2
       colnames(u)<-colnames(r1)<-dtte.p3
       plot(u[1,]~dtte.p3, ylim=range(u, na.rm=T),  type='o', 
-           ylab='integrated P(superior)', xlab='TTE effect size', 
+           ylab='iBDT P(superior)', xlab='TTE effect size', 
            main=paste0('n=',n.1, ', delta_ORR=,', dlt.r*100, '%'))
       j<-2; while(j>=2 & j<=nrow(u)){
         points(u[j,]~dtte.p3, type='o', col=j)
@@ -1677,7 +1676,7 @@ if(TRUE){
       }
       u <- u1*u2
       colnames(u)<-colnames(r1)<-dr1r.p4
-      plot(0~min(dr1r.p4), ylim=range(r1),  type='o', ylab='risk if go', 
+      plot(0~min(dr1r.p4), ylim=range(r1),  type='o', ylab='iBDT risk if go', 
            col='white', xlim=range(dr1r.p4), xlab='ORR decision threshold', 
            main=paste0('n=',n.1,', delta_ORR=', dlt.r*100, 
                        '%, delta_TTE=', dlt.t, 'mon'))
@@ -1692,54 +1691,14 @@ if(TRUE){
         j<-j+1
       }
       col1<-1:nrow(u)
-    }
-
-    p5<-function( n.1=n1c, ngrp.p=ngrp, dlt.r=delta.r, dlt.t=delta.t,
-                 lev2=levInt, dr_1=dr_1Int, ic_1=ic_1Int,  n1=n1Int,
-                 sd1=sd1Int, po=poInt, dr1=dr1Int, orr1=orr1Int, mt1=mt1Int, 
-                 lev1p=lev1, orr0p=orr0, mt0p=mt0,
-                 dc_rg=yellowC){#change CSF with different rate
-      dr1r.p5<-1:n.1
-      pp1<-matrix(NA, nrow=ngrp.p, ncol=length(dr1r.p5))
-      th1<-matrix(NA, nrow=ngrp.p, ncol=2); colnames(th1)<-c('Low','High')
-      for(i in 1:ngrp.p){#start looping
-        for(j in dr1r.p5){# number of responders 
-          csf=orr0p[i]+dlt.r 
-          shape1=0.5; shape2=0.5;
-          newshape1=shape1+j
-          newshape2=shape2+(n.1-j)
-          pp1[i,j]<-1-pbeta(csf, newshape1, newshape2) 
-          if(pp1[i,j]<=min(dc_rg)) th1[i,1]<-j
-          if(pp1[i,j]<=max(dc_rg)) th1[i,2]<-j
-        }
-      }
-      colnames(pp1)<-dr1r.p5
-      plot(0~min(dr1r.p5), ylim=range(pp1),  type='o', ylab='P(orr>CSF)', 
-           col='white', xlim=range(dr1r.p5), xlab='Number of responders', 
-           main=paste0('n=',n.1,', delta_ORR=', dlt.r*100, '%'))
-      abline(h=dc_rg, col=c('red','green'))
-      # xx.poly <- rep(range(dr1r.p5), each=2)
-      # polygon(y=c(0, dc_rg[1], dc_rg[1], 0), 
-      #         x=xx.poly, col='red', border='red')
-      # polygon(y=c(dc_rg[1], dc_rg[2], dc_rg[2], dc_rg[1]), 
-      #         x=xx.poly, col='yellow', border='yellow')
-      # polygon(y=c(dc_rg[2], 1, 1, dc_rg[2]),
-      #         x=xx.poly, col='green', border='green')
-      j<-1; while(j>=1 & j<=nrow(pp1)){
-        points(pp1[j,]~dr1r.p5, type='o', col=j)
-        j<-j+1
-      }
-      col1<-1:nrow(pp1)
-      leg1<-paste0('[',th1[,'Low'], ', ', th1[,'High'], ']')
-      legend('right', legend=leg1, 
-      			 text.col=col1, bty='n', col=col1)
+      # legend('topright', legend=paste0(lev1,', orr_ctrl',orr0, ', mPFS', mt0), 
+      # 			 text.col=col1, bty='n', lty=1, col=col1)
     }
     
     par(mfrow=c(2,2))
-    p5(); p1(); p2(); p3(); 
+    p1(); p2(); p3(); p4();
   }
   if(F){#BEACH code
-    input <- input0
     input<-NULL
     
     input$text<-"Cervical::2L_PD-L1_CPS>1%,NSCLC::1L_IIIB/IV_PD-L1>5%,NSCLC::2L_IIIB/IV_PD-L1>5%,NSCLC::3L_IIIB/IV_PD-L1>5%,NSCLC::1Lplatinum_IIIB/IV"
@@ -1756,7 +1715,6 @@ if(TRUE){
     input$text11<-"1, 2, 3, 4, 5, 6, 7"
     input$text12<-'0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,0.55,0.60,0.65,0.70'
     input$text13<-"0.25, 0.4"
-    input$text14<-'mOS'
     
     iBDT_CSF(
       levInt=input$text, #set cohort lables to compare, '::' defines levels
@@ -1771,20 +1729,8 @@ if(TRUE){
       dorr=input$text10, #simulate different ORR effect size
       dtte=input$text11, #simulate different TTE effect size
       dr1r=input$text12, #simulate decision threshold
-      yellowC=input$text13, #yellow range for ORR decision thresholds
-      tte.lab=input$text14
+      yellowC=input$text13 #yellow range for ORR decision thresholds
     )
-    
-    if(F){
-      csf=0.4 
-      shape1=0.5
-      shape2=0.5
-      r=19  # number of responders 
-      n=40 # number of treated patients
-      newshape1=shape1+r
-      newshape2=shape2+(n-r)
-      1-pbeta(csf, newshape1, newshape2) #posterior prob (RR>CSF)<0.2, then stop; if >0.8 then accelerate.
-    }
   }
 }
 #End 3.1 -----------------------------------------------------------------------#
@@ -1812,8 +1758,8 @@ if(TRUE){
     simSize=100, #simulation size
     m1=1,           #number of group pairs
     r1=ifelse(as.numeric(m1)<2,  NA,
-             paste(rep(1,round(as.numeric(m1))-1),collapse=',') )
-             #proportions in the groups with higher means
+              paste(rep(1,round(as.numeric(m1))-1),collapse=',') )
+    #proportions in the groups with higher means
   ){
     require(pwr)
     xx2<-function(rg1, ss=simSize){
@@ -1825,7 +1771,7 @@ if(TRUE){
       plot(y~x, data=LL[[1]], ylab='power', xlab=xL, type='l', lty=2,
            ylim=c(0,1), xlim=range(LL[[1]]$x))
       if(length(LL)>1){
-       for(i in 2:length(LL)) lines(y~x, data=LL[[i]], lty=i+1)
+        for(i in 2:length(LL)) lines(y~x, data=LL[[i]], lty=i+1)
       }
       abline(v=v1, col='red')
       mtext(text=paste0(v1c,'=', v1), at=v1, col='red')
@@ -1894,7 +1840,7 @@ if(TRUE){
           s0<-nBs1>1
           if(all(!s0)){next}
           yt[s0]<-yt[s0]*(1-pwr.t2n.test(n1=nAs[s0], n2=nBs1[s0], d=d1t, 
-                         sig.level=alpha)$power)
+                                         sig.level=alpha)$power)
         }
         y<-1-yt
       }
@@ -1932,7 +1878,7 @@ if(TRUE){
       xS<-sqrt(x^2-mmt)
       if(is.na(r1)){
         y<-pwr.t2n.test(n1=nA1[i], n2=nB1[i], 
-                      d=abs(theta.vl)/xS, sig.level=alpha)$power
+                        d=abs(theta.vl)/xS, sig.level=alpha)$power
       }else{
         yt<-rep(1, length(x))
         for(r_m in 1:length(r1)){
@@ -1949,13 +1895,13 @@ if(TRUE){
                  ', n=', n.vl, ', sig.level=', alpha)
     add1(xL='total standard deviation', LL=psL, v1=sgm.vl, v1c='sd', LG2=leg2, 
          LG2.pos='topright')
-
+    
     #power vs diff
     x<-xx2(theta.rg, ss=simSize); pdL<-list(); 
     for(i in 1:length(prev)){
       if(is.na(r1)){
         y<-pwr.t2n.test(n1=nA1[i], n2=nB1[i], 
-                      d=abs(x)/sgm.vl, sig.level=alpha)$power
+                        d=abs(x)/sgm.vl, sig.level=alpha)$power
       }else{
         yt<-rep(1, length(x))
         for(r_m in 1:length(r1)){
@@ -2016,19 +1962,3 @@ if(TRUE){
   
 }
 #End 4. -----------------------------------------------------------------------#
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
