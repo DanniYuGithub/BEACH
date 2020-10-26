@@ -1098,8 +1098,9 @@ if(TRUE){
     payoff= c(10, -1),            #payoff value for utility, only two values
     #gain vs lost
     bar.wid=8,          #the width of the horizontal bar
-    Bsample=5000        #number of bootstrapping samples
+    Bsample=10000        #number of bootstrapping samples
   ){
+    set.seed(1234567)
     #a list of difference in ORR between trt and ctr
     RT.diff <- list()
     #a list of difference in tte between trt and ctr
@@ -1539,7 +1540,8 @@ if(TRUE){
     dtte="1, 2, 3, 4, 5, 6, 7", #simulate different TTE effect size
     dr1r='0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,0.55,0.60,0.65,0.70', 
     #simulate decision threshold
-    yellowC="0.25, 0.4" #yellow range for ORR decision thresholds
+    yellowC="0.25, 0.4", #yellow range for ORR decision thresholds
+    showAll=TRUE #if F, only show the iBDT risk vs threshold
   ){
     #set up basic parameters
     if(TRUE){
@@ -1593,10 +1595,10 @@ if(TRUE){
         u2[,i]<-unlist(ibdt1$Utte)
         r1[,i]<-sapply(ibdt1$BayesLoss, function(x){x[2]})
       }
-      u <- u1*u2
+      u <- sqrt(u1*u2)
       colnames(u)<-colnames(r1)<-nsel.p1 #start plotting
       plot(u[1,]~nsel.p1, ylim=range(u),  type='o', 
-           ylab='iBDT P(superior)',  xlab='n',
+           ylab='iBDT Utility',  xlab='n',
            main=paste0('delta_ORR=', 100*dlt.r, '%, delta_TTE=', dlt.t,'mon'))
       j<-2; while(j>=2 & j<=nrow(u)){
         points(u[j,]~nsel.p1, type='o', col=j)
@@ -1623,15 +1625,19 @@ if(TRUE){
         u2[,i]<-unlist(ibdt1$Utte)
         r1[,i]<-sapply(ibdt1$BayesLoss, function(x){x[2]})
       }
-      u <- u1*u2
+      u <- sqrt(u1*u2)
       colnames(u)<-colnames(r1)<-dorr.p2
-      plot(u[1,]~dorr.p2, ylim=range(u),  type='o', ylab='iBDT P(superior)', 
+      plot(u[1,]~dorr.p2, ylim=range(u),  type='o', ylab='iBDT Utility', 
            xlab='ORR effect size', 
            main=paste0('n=',n.1,', delta_TTE=', dlt.t, 'mon'))
       j<-2; while(j>=2 & j<=nrow(u)){
         points(u[j,]~dorr.p2, type='o', col=j)
         j<-j+1
       }
+      col1<-1:nrow(u)
+      legend('bottomright', 
+             legend=paste0(lev1p,'orr_ctrl',orr0p, ' mPFS', mt0p), 
+             text.col=col1, bty='n', lty=1, col=col1)
     }
     
     p3<-function(dtte.p3=dtte,n.1=n1c, ngrp.p=ngrp, dlt.r=delta.r, dlt.t=delta.t,
@@ -1648,10 +1654,10 @@ if(TRUE){
         u2[,i]<-unlist(ibdt1$Utte)
         r1[,i]<-sapply(ibdt1$BayesLoss, function(x){x[2]})
       }
-      u <- u1*u2
+      u <- sqrt(u1*u2)
       colnames(u)<-colnames(r1)<-dtte.p3
       plot(u[1,]~dtte.p3, ylim=range(u, na.rm=T),  type='o', 
-           ylab='iBDT P(superior)', xlab='TTE effect size', 
+           ylab='iBDT Utility', xlab='TTE effect size', 
            main=paste0('n=',n.1, ', delta_ORR=,', dlt.r*100, '%'))
       j<-2; while(j>=2 & j<=nrow(u)){
         points(u[j,]~dtte.p3, type='o', col=j)
@@ -1674,7 +1680,7 @@ if(TRUE){
         u2[,i]<-unlist(ibdt1$Utte)
         r1[,i]<-sapply(ibdt1$BayesLoss, function(x){x[2]})
       }
-      u <- u1*u2
+      u <- sqrt(u1*u2)
       colnames(u)<-colnames(r1)<-dr1r.p4
       plot(0~min(dr1r.p4), ylim=range(r1),  type='o', ylab='iBDT risk if go', 
            col='white', xlim=range(dr1r.p4), xlab='ORR decision threshold', 
@@ -1695,8 +1701,15 @@ if(TRUE){
       # 			 text.col=col1, bty='n', lty=1, col=col1)
     }
     
-    par(mfrow=c(2,2))
-    p1(); p2(); p3(); p4();
+    if(showAll){
+      par(mfrow=c(1,2))
+      #p1();  p4(); 
+      p2(); p3();
+    }else{
+      par(mfrow=c(1,2))
+      p1(); p4();
+
+    }
   }
   if(F){#BEACH code
     input<-NULL
