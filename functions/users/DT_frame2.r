@@ -586,7 +586,7 @@ if(TRUE){
     
     #~~~data construction~~~#
     #the number of decision levels is the number thresholds plus 1
-    xs <- 1:n              #get all numbers in the binomial distribution
+    xs <- 0:n              #get all numbers in the binomial distribution
     xs_lev <- rep(1, n)    #get decision levels for each number
     for(i in 1:len_a) xs_lev[xs>th[i]]<-i+1
     
