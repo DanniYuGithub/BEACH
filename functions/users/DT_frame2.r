@@ -378,7 +378,7 @@ if(TRUE){
       th.p <- 0.5; #threshold for probability X-axis position
       #joint probability for Pr(br=1,...), Pr(br=0, ...), Pr(br=1,...), Pr(br=0, ...), etc.
       num.mat.L <- nrow(mat.tab)/2
-      print(num.mat.L)
+      #print(num.mat.L)
       j.prob <- rep(1, num.mat.L) 
       for(i in 1:tot.col){
         if(i>3) { dum2 <- dum2+1; th.p <- 1;}
@@ -389,21 +389,21 @@ if(TRUE){
           # add probabilities to the tree and the the expected Utility for each action
           if(i==2){
             text(x=i+dum2-th.p, y=which(mat.tab[,i]!=''), labels=prior_ti, cex=text.size1, col='gray')
-            print(prior_ti)
+            #print(prior_ti)
             j.prob <- j.prob * rep(prior_ti, each=num.mat.L/length(prior_ti))
-            print(j.prob)
+            #print(j.prob)
           }else if(i==3){
             if(length(prior_prop)==length(dose)) 
               prior_prop <- rep(prior_prop, numL.blBMK*numL.tumorType)
             text(x=i+dum2-th.p, y=which(mat.tab[,i]!=''), labels=prior_prop, cex=text.size1, col='gray')
             j.prob <- j.prob * rep(prior_prop, each=num.mat.L/length(prior_prop))
-            print(j.prob)
+            #print(j.prob)
           }else if (i==4){
             if(length(prob_stop0)==length(dose))
               prob_stop0 <- rep(prob_stop0, numL.blBMK*numL.tumorType) 
             text(x=i+dum2-th.p, y=which(mat.tab[,i]!=''), labels=prob_stop0, cex=text.size1, col='gray')
             j.prob <- j.prob * rep(prob_stop0, each=num.mat.L/length(prob_stop0))
-            print(j.prob)
+            #print(j.prob)
           }else if (i==5){
             if(length(prob_BR1)==numL.dose && numL.dose<numL.blBMK*numL.tumorType)
               prob_BR1 <- rep(prob_BR1, numL.blBMK*numL.tumorType)
@@ -411,7 +411,7 @@ if(TRUE){
             #the prob are Pr(br=1|...), Pr(br=0|...), Pr(br=1|...), Pr(br=0|...), etc.
             prob_BR <- as.vector(rbind(prob_BR1, 1-prob_BR1))
             j.prob <- j.prob * prob_BR
-            print(j.prob)
+            #print(j.prob)
           }else if (i==6){
             if(length(prob_CB1_BR)==2)
               prob_CB1_BR <- rep(prob_CB1_BR, numL.blBMK*numL.tumorType)
@@ -432,7 +432,7 @@ if(TRUE){
             top.p   <- sort(sub.u, decreasing=TRUE)[1:num.col]
             col.p   <- rep('gray', length(j.prob))
             col.p[sub.u%in%top.p] <- topCol
-            print(j.prob)
+            #print(j.prob)
             text(x=i+dum2+1, y=which(mat.tab[,i]=='yes'), labels=j.prob, 
                  cex=text.size1, col=col.p) 
             text(x=i+dum2+2.5, y=which(mat.tab[,i]=='yes'), labels=j.prob0, 
@@ -444,9 +444,9 @@ if(TRUE){
                              U0=rep("", nrow(mat.tab)),
                              topColor=rep("", nrow(mat.tab)))
             
-            print(prob_CB1_BR)
-            print(j.prob)
-            print(mat.tab)
+            #print(prob_CB1_BR)
+            #print(j.prob)
+            #print(mat.tab)
             
             mat.tab[mat.tab[, i]=='yes', 'U']<-j.prob
             mat.tab[mat.tab[, i]=='yes', 'U0']<-j.prob0
@@ -582,7 +582,7 @@ if(TRUE){
     #user can re-define the loss function from here to the end....
     
     th <- sort(as.numeric(th))
-    len_a<- length(th)
+    len_a <- length(th)
     
     #~~~data construction~~~#
     #the number of decision levels is the number thresholds plus 1
@@ -596,23 +596,33 @@ if(TRUE){
     
     #construct loss elements based on the higher bound for the lowest level
     i<-1
-    els.h<-abs(xs_lev - i)*abs(xs-th[i])*(1-d.fun(xs, size=n, prob=p_pos))
-    e_loss[i]<-sum(els.h[xs_lev>i])
+    #els.h<-abs(xs_lev - i)*abs(xs-th[i])*(1-d.fun(xs, size=n, prob=p_pos))
+    els.h<-(xs<=th[i])*(xs-th[i])*(d.fun(xs, size=n, prob=p_pos))
+    e_loss[i]<-sum(els.h)
+    tot.dist <- sum(sapply(n, function(x){
+        sum((xs<=x)*abs(xs-x)*(d.fun(xs, size=n, prob=p_pos)))
+       }))
     
     #expected loss from level 2 to lev_a
-    for(i in 2:len_a){#if taking the action as level i
-      els.h<-abs(xs_lev - i)*abs(xs-th[i])*(1-d.fun(xs, size=n, prob=p_pos))
-      els.l<-abs(xs_lev - i)*abs(xs-th[i-1])*(1-d.fun(xs, size=n, prob=p_pos))
-      e_loss[i] <- sum(els.h[xs_lev>i]) + sum(els.l[xs_lev<i])
-    }
+    if(len_a>1){
+      for(i in 2:len_a){#if taking the action as level i
+        els.h<-abs(xs_lev - i)*abs(xs-th[i])*(1-d.fun(xs, size=n, prob=p_pos))
+        els.l<-abs(xs_lev - i)*abs(xs-th[i-1])*(1-d.fun(xs, size=n, prob=p_pos))
+        e_loss[i] <- sum(els.h[xs_lev>i]) + sum(els.l[xs_lev<i])
+      }
+    } 
     
     #for highest level
     #construct loss elements based on the lower bound
     i <- len_a
-    els.l<-abs(xs_lev - i-1)*abs(xs-th[i])*(1-d.fun(xs, size=n, prob=p_pos))
-    e_loss[i+1]<-sum(els.l[xs_lev<=i])
+    els.l<-(xs>th[i])*abs(xs-th[i])*(1-d.fun(xs, size=n, prob=p_pos))
+    e_loss[i+1]<-sum(els.l)
+    tot.dist2 <- sum(sapply(0, function(x){
+        sum((xs>x)*abs(xs-x)*(1-d.fun(xs, size=n, prob=p_pos)))
+       }))
     
-    return(e_loss)
+    #return(e_loss/c(tot.dist, tot.dist2))
+    return(e_loss/n)
   }
   
   
@@ -710,7 +720,7 @@ if(TRUE){
       }else{
         th1 <- lapply(my.split1(dr_th),as.numeric)
       }
-      print(th1)
+      #print(th1)
       
       #cleanup the payoff values
       if(is.character(payoff)){
@@ -1222,12 +1232,12 @@ if(TRUE){
               RT.diff[[o]]$sample2 <- sam.ctr
               RT.diff[[o]]$sample1.prob <- sam.trt.prob
               RT.diff[[o]]$sample2.prob <- sam.ctr.prob
-              print(paste('sum(sam.trt.prob)', sum(sam.trt.prob))); 
-              print(paste(p.0[[o]][1]/sum(p.0[[o]]), ',', prob.ctr))
-              print(quantile(sam.trt.prob))
-              print(quantile(sam.trt))
-              print(quantile(sam.ctr))
-              print(paste('sum(sam.ctr.prob)', sum(sam.ctr.prob)))
+              #print(paste('sum(sam.trt.prob)', sum(sam.trt.prob))); 
+              #print(paste(p.0[[o]][1]/sum(p.0[[o]]), ',', prob.ctr))
+              #print(quantile(sam.trt.prob))
+              #print(quantile(sam.trt))
+              #print(quantile(sam.ctr))
+              #print(paste('sum(sam.ctr.prob)', sum(sam.ctr.prob)))
             }
             useRspDiff<-TRUE
           }else{return(NULL)}
@@ -1324,7 +1334,7 @@ if(TRUE){
           #if benchmark ref is available then the threshold th2 change to be
           #the difference. 
           th2 <- round((th1[[o]]-p.0p.ctr[o]/n_1.ctr[o])*n_1[o])
-          print(th2); print(paste("length(RT.diff[[o]])", length(RT.diff[[o]])));
+          #print(th2); print(paste("length(RT.diff[[o]])", length(RT.diff[[o]])));
           
           eL <- eLoss.diff(th=th2, 
                            sample1=RT.diff[[o]]$sample1,
@@ -1332,17 +1342,20 @@ if(TRUE){
                            sample1.prob=RT.diff[[o]]$sample1.prob,
                            sample2.prob=RT.diff[[o]]$sample2.prob)
           #normalize the loss
+#print('sum(eL$e_loss)'); print(sum(eL$e_loss))
           eL$e_loss <- eL$e_loss/sum(eL$e_loss)
           #probability of the difference pi_trt-pi_ctr>0
-          print(paste0('p.1[[',o,']]=', p.1[[o]] <- eL$p.1g2))
+          #print(paste0('p.1[[',o,']]=', p.1[[o]] <- eL$p.1g2))
+          p.1[[o]] <- eL$p.1g2
           eL <- eL$e_loss
         }else{
           #expected response probability pi_trt
           p.1[[o]] <- p.0[[o]][1]/sum(p.0[[o]])
-          print(p.1[[o]])
           eL <- my.eLoss(th=th2, n=n_1[o], p_pos=p.1[[o]] )
           #normalized the loss
-          eL <- eL/sum(eL)
+          #eL <- eL/sum(eL)
+          #convert the expected distance to success in the scale of response rate
+          #eL <- eL/n_1[o]
         }
         E.L[[o]]<-eL  #expected loss
         
@@ -1569,6 +1582,7 @@ if(TRUE){
       #set up ORR trt vs ctrl labels
       orrV<-paste(orr0+delta.r, orr0, sep='vs')
       orr1Int<-paste(orrV,collapse=', ')
+      #orr1Int <- paste(orr0+delta.r, collapse=', ')
       
       #set up TTE trt vs ctrl lables      
       mt1V<-paste(mt0+delta.t, mt0, sep='vs')
@@ -1673,19 +1687,21 @@ if(TRUE){
       u1<-u2<-r1<-matrix(NA, nrow=ngrp.p, ncol=length(dr1r.p4))
       for(i in 1:length(dr1r.p4)){#start looping
         dr1 <- paste(rep(dr1r.p4[i], ngrp.p), collapse=',')
+#print('dr1');print(dr1); print(dr_1); print(ic_1); print(orr1);
         ibdt1<-BDT_UaL.diff( levVars=lev2, dr_lev=dr_1, incidence=ic_1, 
                              numRsp=orr1, muTTE=mt1,  sdTTE=sd1,  n_ij=n1, 
                              dr_th=dr1, showPlot=F, payoff=po)
         u1[,i]<-unlist(ibdt1$U)
         u2[,i]<-unlist(ibdt1$Utte)
         r1[,i]<-sapply(ibdt1$BayesLoss, function(x){x[2]})
+#print('BayL'); print(ibdt1$BayesLoss)
       }
       u <- sqrt(u1*u2)
       colnames(u)<-colnames(r1)<-dr1r.p4
-      plot(0~min(dr1r.p4), ylim=range(r1),  type='o', ylab='iBDT risk if go', 
+      plot(0~min(dr1r.p4), ylim=range(r1),  type='o', 
+           ylab='iBDT risk = expected distance to success', 
            col='white', xlim=range(dr1r.p4), xlab='ORR decision threshold', 
-           main=paste0('n=',n.1,', delta_ORR=', dlt.r*100, 
-                       '%, delta_TTE=', dlt.t, 'mon'))
+           main=paste0('n=',n.1,', delta_ORR=', dlt.r*100, '%'))
       polygon(x=c(min(dr1r.p4), dc_rg[1], dc_rg[1], min(dr1r.p4)), 
               y=rep(range(r1), each=2), col='red', border='red')
       polygon(x=c(dc_rg[1], dc_rg[2], dc_rg[2], dc_rg[1]), 
@@ -1696,6 +1712,7 @@ if(TRUE){
         points(r1[j,]~dr1r.p4, type='o', col=j)
         j<-j+1
       }
+#print('r1:'); print(r1)
       col1<-1:nrow(u)
       # legend('topright', legend=paste0(lev1,', orr_ctrl',orr0, ', mPFS', mt0), 
       # 			 text.col=col1, bty='n', lty=1, col=col1)
@@ -1742,11 +1759,114 @@ if(TRUE){
       dorr=input$text10, #simulate different ORR effect size
       dtte=input$text11, #simulate different TTE effect size
       dr1r=input$text12, #simulate decision threshold
-      yellowC=input$text13 #yellow range for ORR decision thresholds
+      yellowC=input$text13, #yellow range for ORR decision thresholds\
+      showAll=F
     )
   }
 }
 #End 3.1 -----------------------------------------------------------------------#
+
+
+#Begin 3.2 ---------------------------------------------------------------------#
+if(T){
+  library(extraDistr)
+
+  #convert a text to num
+  c2n<<-function(x, rm.c=c('c','(',')'), sp=',', sp2=';'){
+    x<-as.character(x)
+    for(jj in rm.c)
+      x <- gsub(jj, '', x, fixed=T)
+    if(grepl(sp2, x)){
+      x3 <- unlist(strsplit(x, split=sp2, fixed=T))
+      x2 <- lapply(x3, function(m){
+              as.numeric(unlist(strsplit(m, split=sp, fixed=T)))})
+    }else{
+      x2 <- as.numeric(unlist(strsplit(x, split=sp, fixed=T)))
+    }
+    return(x2)
+  }
+  
+  #generate a futility table for no go decision
+  futTb <<- function(
+       n=c(6, 8, 9), #sample sizes
+       nr=c(0, 1, 2, 4), #number of observed responders
+       trt.orr=c(0.1, 0.2), #target ORRs
+       dlt.orr=c(0.05, 0.05), #ORR effect size
+       show.type=1, #1=both posterior prob and iBDT risk; 2=iBDT only; 3=post prob
+       beta.parm=c(0.2, 1.8), #hyper prior only used in Bayesian Posterior only
+       num.dig=3 #number of digits to keep
+      ){
+     if(is.character(show.type)){show.type<-as.numeric(substring(show.type,1,1))}
+     #setup number of responders, sample sizes
+     trt.orr <- sort(unique(trt.orr[trt.orr>=0]))
+     n <- sort(unique(n[n>0]))
+     trt.orrs <- rep(trt.orr, each=length(n))
+     trt.id <- rep(1:length(trt.orr), each=length(n))
+     dlt.orrs <- rep(dlt.orr, each=length(n))
+     ns <- rep(n, times=length(trt.orr))
+     if(is.list(beta.parm)){beta.L <- beta.parm}else{beta.L<-NULL}
+
+     #set up rsp labels and fut table
+     nr <- sort(unique(nr))
+     lab.rsp<-paste0('#rsp=', nr)
+     fut<-matrix(NA, nrow=length(n)*length(trt.orr), ncol=length(lab.rsp)) 
+     colnames(fut)<-lab.rsp
+
+     show.type<-as.character(show.type)
+     for(i in 1:nrow(fut)){
+       if(!is.null(beta.L)){beta.parm<-beta.L[[trt.id[i]]]}
+       irsk<-NULL #get iBDT risk
+       for(j in 1:length(nr)){
+         rsk<-BDT_UaL.diff(levVars='my.tst', dr_lev="stop::go", incidence=1, 
+              numRsp=paste0(trt.orrs[i],'vs', trt.orrs[i]-dlt.orrs[i]), 
+              muTTE=3, sdTTE=0.8, # not useful for rsk result
+              n_ij=ns[i], dr_th=nr[j]/ns[i], showPlot=F, payoff=c(1,0))
+         irsk <- c(irsk, rsk$BayesLoss[[1]][2])
+       }
+       #posterior parameter expectation
+       p2 <- 1- pbeta(trt.orrs[i], beta.parm[1]+nr, beta.parm[2]+ns[i]-nr)
+       p2 <- round(p2, num.dig)
+       irsk<-round(irsk, num.dig)
+       if(show.type==2){
+         fut[i,] <- paste(p2,'vs', irsk)
+         lst.row<-'P(ORR>target_orr)  vs  iBDT risk for the expected distance to success. Effect size=0.05'
+       }else if(show.type==1){
+         fut[i,] <- irsk
+         lst.row<-'iBDT risk for the expected distance to success. Effect size=0.05'
+       }else{
+         fut[i,] <- p2
+         lst.row<-'P(ORR>target_orr)'
+       }
+     }
+     ot <- data.frame(targetORR=trt.orrs, sampleSize=ns, fut)
+     colnames(ot)[-(1:2)] <- lab.rsp
+     #ot <- rbind(ot, c('', '', lst.row, rep('', ncol(ot)-3)))
+     return(ot)
+  }
+
+  #test result
+  if(F){
+    input<-NULL
+    input$text <- '6, 12, 24'
+    input$text2 <- '0, 1, 2, 4'
+    input$text3 <- '0.1, 0.15, 0.2'
+    input$text4 <- '0.05, 0.05, 0.05'
+    input$text5 <- '0.2, 1.8; 0.3, 1.7;0.4, 16'
+    input$radio <- '2. showbb'
+    input$dropdown<-'4'
+
+    futTb(n=c2n(input$text), #sample sizes
+       nr=c2n(input$text2), #number of observed responders
+       trt.orr=c2n(input$text3), #target ORRs
+       dlt.orr=c2n(input$text4), #ORR effect size
+       show.type=input$radio, #1=both posterior prob and iBDT risk; 2=iBDT only; 3=post prob
+       beta.parm=c2n(input$text5), # Hyper parameter in Beta distribution
+       num.dig=c2n(input$dropdown) )
+
+  }
+}
+#End 3.2 -----------------------------------------------------------------------#
+
 
 
 
@@ -1975,3 +2095,4 @@ if(TRUE){
   
 }
 #End 4. -----------------------------------------------------------------------#
+
