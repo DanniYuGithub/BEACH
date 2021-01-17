@@ -698,7 +698,8 @@ if(TRUE){
       
       p.0<-list()
       for(o in 1:length(incd)){
-        p.0[[o]]<-c(1+incd[o], 2-incd[o])
+        #p.0[[o]]<-c(1+incd[o], 2-incd[o])
+        p.0[[o]]<-c(1, 2)
       }
       
       if(!is.null(pBprior) && pBprior!="~" && 
@@ -706,7 +707,7 @@ if(TRUE){
         p.0p<-my.split1(pBprior, s2=" ")
         p.0p<-lapply(p.0p, function(x){x[x!=""]})
         for(o in 1:length(p.0)){
-          p.0[[o]] <- p.0[[o]]+as.numeric(p.0p[[o]])
+          p.0[[o]] <- p.0[[o]]+as.numeric(p.0p[[o]])*incd[o]
         }
         #note the length p.0 == the leve of plans
       }
@@ -1166,7 +1167,8 @@ if(TRUE){
       #for treatment prior parameters of Beta Variable pi based on incidences
       p.0<-list()
       for(o in 1:length(incd)){
-        p.0[[o]]<-c(1+incd[o], 2-incd[o])
+        #p.0[[o]]<-c(1+incd[o], 2-incd[o])
+        p.0[[o]]<-c(1, 2)
       }
       
       #posterior parameters of Beta Variable pi updated by trt ORR
@@ -1182,17 +1184,17 @@ if(TRUE){
             #if(any(p.0p>1|p.0p<0)) return(NULL)
             for(o in 1:length(p.0)){
               if(p.0p[o]>1){
-                p.0[[o]]<-p.0[[o]]+c(p.0p[o], n_1[o]-p.0p[o])
+                p.0[[o]]<-p.0[[o]]+c(p.0p[o]*incd[o], n_1[o]-p.0p[o]*incd[o])
               }else{
-                p.0[[o]]<-p.0[[o]]+c(p.0p[o], 1-p.0p[o])
+                p.0[[o]]<-p.0[[o]]+c(p.0p[o]*incd[o], 1-p.0p[o]*incd[o])
               }
             }
           } else {
             for(o in 1:length(p.0)){
               if(p.0p[o]>1){
-                p.0[[o]]<-p.0[[o]]+c(p.0p[o], n_1[o]-p.0p[o])
+                p.0[[o]]<-p.0[[o]]+c(p.0p[o]*incd[o], n_1[o]-p.0p[o]*incd[o])
               }else{
-                p.0[[o]]<-p.0[[o]]+c(p.0p[o], 1-p.0p[o])
+                p.0[[o]]<-p.0[[o]]+c(p.0p[o]*incd[o], 1-p.0p[o]*incd[o])
               }
             }
           }
@@ -1209,9 +1211,9 @@ if(TRUE){
           if(!is.null(n_1.ctr) & length(p.0p)==length(n_1.ctr)){
             for(o in 1:length(p.0p)){
               if(p.0p.trt[o]>1){#if the new alpha>1
-                p.0[[o]] <- p.0[[o]]+c(p.0p.trt[o], n_1[o]-p.0p.trt[o])
+                p.0[[o]] <- p.0[[o]]+c(p.0p.trt[o]*incd[o], n_1[o]-p.0p.trt[o]*incd[o])
               }else{
-                p.0[[o]] <- p.0[[o]]+n_1[o]*c(p.0p.trt[o], 1-p.0p.trt[o])
+                p.0[[o]] <- p.0[[o]]+n_1[o]*c(p.0p.trt[o]*incd[o], 1-p.0p.trt[o]*incd[o])
                 #p.0p.trt[o] <- round(p.0p.trt[o], n_1[o])
                 p.0p.trt[o] <- p.0p.trt[o]
               }
@@ -1222,11 +1224,23 @@ if(TRUE){
                 p.0p.ctr[o]<-p.0p.ctr[o]*n_1.ctr[o]
               }
               sam.trt <- sam.ctr <- 0:n_1.trt[o]
-              sam.trt.prob<-dbinom(sam.trt, size=n_1.trt[o], 
+              use1 <- 1
+              if(use1==1){ #######2020-10-29   use emprical binomial
+                sam.trt.prob<-dbinom(sam.trt, size=n_1.trt[o], 
                                    prob=p.0[[o]][1]/sum(p.0[[o]]) )
-              sam.ctr.prob<-dbinom(sam.ctr, size=n_1.ctr[o], 
+                sam.ctr.prob<-dbinom(sam.ctr, size=n_1.ctr[o], 
                                    prob=prob.ctr )
-              
+              }else if (use1==2){ #use preditive distribution for both trt and cntr
+                sam.trt.prob<-dbbinom(sam.trt, size=n_1.trt[o], 
+                                  alpha=1+p.0p.trt[o], beta=2-p.0p.trt[o] )
+                sam.ctr.prob<-dbbinom(sam.ctr, size=n_1.ctr[o], 
+                                  alpha=1+prob.ctr, beta=2-prob.ctr)
+              }else{
+                sam.trt.prob<-dbeta(sam.trt/n_1[o],  
+                                   1+p.0p.trt[o], 2-p.0p.trt[o] )
+                sam.ctr.prob<-dbeta(sam.ctr/n_1[o],  
+                                   1+prob.ctr, 2-prob.ctr)
+              }
               RT.diff[[o]] <- list()
               RT.diff[[o]]$sample1 <- sam.trt
               RT.diff[[o]]$sample2 <- sam.ctr
@@ -1768,7 +1782,7 @@ if(TRUE){
 
 
 #Begin 3.2 ---------------------------------------------------------------------#
-if(T){
+if(T){ #######2020-10-29
   library(extraDistr)
 
   #convert a text to num
@@ -1794,7 +1808,8 @@ if(T){
        dlt.orr=c(0.05, 0.05), #ORR effect size
        show.type=1, #1=both posterior prob and iBDT risk; 2=iBDT only; 3=post prob
        beta.parm=c(0.2, 1.8), #hyper prior only used in Bayesian Posterior only
-       num.dig=3 #number of digits to keep
+       num.dig=3, #number of digits to keep
+       direc='1. P(X>r|data)' #for success probability, or'2. P(X<=r|data)' for futility
       ){
      if(is.character(show.type)){show.type<-as.numeric(substring(show.type,1,1))}
      #setup number of responders, sample sizes
@@ -1817,43 +1832,74 @@ if(T){
        if(!is.null(beta.L)){beta.parm<-beta.L[[trt.id[i]]]}
        irsk<-NULL #get iBDT risk
        for(j in 1:length(nr)){
-         rsk<-BDT_UaL.diff(levVars='my.tst', dr_lev="stop::go", incidence=1, 
+         #expected similarity between observed data and target data
+         rsk<-BDT_UaL.diff(levVars='my.tst', dr_lev="stop::go", incidence="1", 
               numRsp=paste0(trt.orrs[i],'vs', trt.orrs[i]-dlt.orrs[i]), 
               muTTE=3, sdTTE=0.8, # not useful for rsk result
               n_ij=ns[i], dr_th=nr[j]/ns[i], showPlot=F, payoff=c(1,0))
-         irsk <- c(irsk, rsk$BayesLoss[[1]][2])
-       }
+         irsk <- c(irsk, 1-rsk$BayesLoss[[1]][2])
+       }#Similarity to target success?wwith number of responders (m) improved by treatment
        #posterior parameter expectation
-       p2 <- 1- pbeta(trt.orrs[i], beta.parm[1]+nr, beta.parm[2]+ns[i]-nr)
+       p2 <- 1- pbeta(trt.orrs[i], beta.parm[1]+nr, beta.parm[2]+ns[i]-nr)#Posterior Prob to success
+       p4 <- 1- pbbinom(nr, ns[i], 1+trt.orrs[i], 2-trt.orrs[i]) #Predictive Prob to success
+       p5 <- pbinom(nr, ns[i], trt.orrs[i])        #false negative P(Y<=nr|targetORR)
+       p6 <- 1-pbinom(nr, ns[i], trt.orrs[i]-dlt.orrs[i]) #false positive P(Y>nr|controlORR)
+       if(substring(direc, 1,1)!='1'){
+          irsk <- 1-irsk
+          p2 <- 1-p2 #Posterior Prob to failure
+          p4 <- 1-p4 #Predictive Prob to failure
+          p5 <- 1-p5 #true negative
+          p6 <- 1-p6 #true positive
+       }
        p2 <- round(p2, num.dig)
+       p4 <- round(p4, num.dig)
+       p5 <- round(p5, num.dig)
+       p6 <- round(p6, num.dig)
        irsk<-round(irsk, num.dig)
-       if(show.type==2){
+       if(show.type==4){ #FN
+         fut[i,] <- p5
+       }else if (show.type==5){ #FP
+         fut[i,] <- p6
+       }else if(show.type==100) {#iBDT posterior for number of responders
+         fut[i,] <- paste(p2, 'vs', p4)
+         lst.row<-'Posterior Prob Beta vs BetaBinomial'
+       }else if(show.type==101) {#iBDT posterior for number of responders
+         fut[i,] <- p4
+         lst.row<-'Posterior Prob BetaBinomial'
+       }else if(show.type==2){ #both table
          fut[i,] <- paste(p2,'vs', irsk)
          lst.row<-'P(ORR>target_orr)  vs  iBDT risk for the expected distance to success. Effect size=0.05'
-       }else if(show.type==1){
+       }else if(show.type==1){ #iBDT risk
          fut[i,] <- irsk
          lst.row<-'iBDT risk for the expected distance to success. Effect size=0.05'
-       }else{
+       }else { #posterior for response rate  #show.type==3
          fut[i,] <- p2
          lst.row<-'P(ORR>target_orr)'
        }
      }
      ot <- data.frame(targetORR=trt.orrs, sampleSize=ns, fut)
+     ot[ot==0]<-paste0('<0.', paste(rep('0', num.dig-1), collapse=''), '1')
      colnames(ot)[-(1:2)] <- lab.rsp
+     if(show.type%in%c(1,5)){ot <- cbind(controlORR=trt.orrs-dlt.orrs, ot)}
      #ot <- rbind(ot, c('', '', lst.row, rep('', ncol(ot)-3)))
      return(ot)
   }
 
   #test result
   if(F){
+
+    source('functions/users/DT_frame2.r')
+
     input<-NULL
-    input$text <- '6, 12, 24'
+    input$text <- '6, 9, 12'
     input$text2 <- '0, 1, 2, 4'
-    input$text3 <- '0.1, 0.15, 0.2'
-    input$text4 <- '0.05, 0.05, 0.05'
+    input$text3 <- '0.1, 0.15'
+    input$text4 <- '0.05, 0.05'
     input$text5 <- '0.2, 1.8; 0.3, 1.7;0.4, 16'
-    input$radio <- '2. showbb'
-    input$dropdown<-'4'
+#    input$radio <- '0. FN'
+    input$radio <- '4. FP'
+    input$dropdown<-'3'
+    input$radio2<- '1.'
 
     futTb(n=c2n(input$text), #sample sizes
        nr=c2n(input$text2), #number of observed responders
@@ -1861,7 +1907,8 @@ if(T){
        dlt.orr=c2n(input$text4), #ORR effect size
        show.type=input$radio, #1=both posterior prob and iBDT risk; 2=iBDT only; 3=post prob
        beta.parm=c2n(input$text5), # Hyper parameter in Beta distribution
-       num.dig=c2n(input$dropdown) )
+       num.dig=c2n(input$dropdown),
+       direc=input$radio2 )
 
   }
 }
