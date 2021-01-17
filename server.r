@@ -56,7 +56,7 @@ if(TRUE){
   #   repos = "http://cran.us.r-project.org")
   
   library(xtable)
-  #library(rtf)
+  library(rtf)
   library(plyr)
   
   
