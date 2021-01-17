@@ -4,19 +4,17 @@ Num,Add,Tab.value,Tab.label,select.label,Type,Source,Request.Name,Condition,Layo
 1,TRUE,Tab0,Data Review,Dropdown Label1,--,empty.r, load data,FALSE,1,,0,0,NA,0,"indataset.names <<- names(indataset)
 tab <<- data.frame(as.matrix(1, ncol=5, nrow=2))
 return(NULL)",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
-2,TRUE,Tab0,Data Review,Dropdown Label1,Table,NA,Review Data,FALSE,1,paste(input$dropdown),0,0,NA,0,"if(length(indataset)>0){
-indataset.names <<- names(indataset)
-tmpD <<- indataset[as.list(input)$dropdown][[1]]
-if(!is.data.frame(tmpD)){
-  tmpD1 <- data.frame(tmpD)
-  colnames(tmpD1) <- names(tmpD)
-  tmpD <<- tmpD1
-}
-tab1<<- data.frame( summary(tmpD) ) 
+2,TRUE,Tab0,Data Review,Dropdown Label1,Table,NA,Review Data,FALSE,1,paste(input$radio),0,0,NA,0,"if(length(indataset)>0){
+  tmpD <<- indataset[input$radio][[1]]
+  if(!is.data.frame(tmpD)){
+    tmpD1 <- data.frame(tmpD)
+    colnames(tmpD1) <- names(tmpD)
+    tmpD <<- tmpD1
+  }
+  tab1<<- head(data.frame( tmpD) )
 } else {tab1<<-data.frame(x=""No data is loaded yet!"")}
 tab1 [is.na(tab1)] <- "" ""
-tab1 <<- tab1
-tab1",NA,NA,NA,input$dropdown,File names in indataset,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,File names in indataset,indataset.names,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+tab1",NA,NA,NA,input$radio,File names in indataset,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,File names in indataset,names(indataset),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
 3,TRUE,Tab1,Review Widgets,Dropdown Label1,Figure,NA,Plot a Variable that follows random normal distribution with a slide bar,FALSE,1,Plot a Variable that follows random normal distribution ,650,1000,95,0,"if(is.null(input$slide) | is.null(input$radio)){
   plot.new()
 }else{
